@@ -1,0 +1,412 @@
+/* Table stage: everything is positioned in percentages of the stage so one layout scales from 320px to desktop. */
+.stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  container-type: size;
+}
+
+.felt {
+  position: absolute;
+  inset: 9% 5% 9% 5%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(255, 255, 255, 0.045), transparent 70%),
+    radial-gradient(ellipse at 50% 40%, var(--felt-1), var(--felt-2) 78%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 24px 60px rgba(0, 0, 0, 0.35),
+    0 0 0 6px var(--rail),
+    0 0 0 7px rgba(255, 255, 255, 0.07),
+    0 34px 60px -30px rgba(0, 0, 0, 0.95);
+}
+
+.stage__center {
+  --card-w: clamp(30px, 10cqw, 74px);
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transform: translate(-50%, -50%);
+}
+
+/* Pot ------------------------------------------------------------------- */
+.pot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 44px;
+}
+.pot__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pot__value {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: 1;
+  animation: bump var(--dur-2) var(--ease);
+}
+.pot__value .amount-unit {
+  font-size: var(--fs-sm);
+}
+.pot__label {
+  letter-spacing: 0.14em;
+}
+
+/* Board ------------------------------------------------------------------ */
+.board {
+  display: flex;
+  gap: calc(var(--card-w) * 0.14);
+}
+
+/* Chips -------------------------------------------------------------------- */
+.chipstack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chipstack__discs {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+}
+.chipstack__disc {
+  position: absolute;
+  left: 0;
+  width: 16px;
+  height: 9px;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at center, var(--surface-4) 0 48%, transparent 52%),
+    repeating-conic-gradient(#eceff5 0 22.5deg, #7d8aa3 22.5deg 45deg);
+  box-shadow: 0 1.5px 0 rgba(0, 0, 0, 0.55);
+}
+.chipstack__amount {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.bet {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(10, 12, 15, 0.78);
+  border: 1px solid var(--line);
+  transform: translate(-50%, -50%);
+  animation: bet-in var(--dur-2) var(--ease);
+}
+.bet__amount {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.bet--sweep {
+  animation: bet-sweep 480ms cubic-bezier(0.5, 0, 0.8, 0.4) forwards;
+  pointer-events: none;
+}
+.bet--sweep .chipstack {
+  gap: 0;
+}
+
+/* Seat --------------------------------------------------------------------- */
+.seat {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 92px;
+  transform: translate(-50%, -50%);
+  transition: opacity var(--dur-2) var(--ease);
+}
+.seat__cards {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 12px);
+  z-index: 0;
+  display: flex;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.seat__cards .pcard:first-child {
+  rotate: -5deg;
+}
+.seat__cards .pcard:last-child {
+  rotate: 5deg;
+  margin-left: -9px;
+}
+.seat__cards[data-revealed] {
+  bottom: calc(100% - 4px);
+  z-index: 2;
+}
+.seat__cards[data-revealed] .pcard {
+  rotate: 0deg;
+}
+.seat__cards[data-revealed] .pcard:last-child {
+  margin-left: 4px;
+}
+
+.seat__plate {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px 4px 4px;
+  min-width: 86px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.9);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+.seat__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-4);
+  color: var(--text-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  transition: background var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+.seat__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+.seat__name {
+  max-width: 54px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+}
+.seat__stack {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.dealer {
+  position: absolute;
+  right: -5px;
+  top: -7px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f1efe8;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.seat__timer {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform-origin: left;
+}
+.seat__timer[data-thinking] {
+  animation: think 1.6s var(--ease) infinite;
+}
+
+.seat__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 16px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.seat__pos {
+  color: var(--text-3);
+}
+.seat__status[data-kind='act'] {
+  color: var(--text-2);
+}
+.seat__status[data-kind='fold'] {
+  color: var(--text-3);
+}
+.seat__status[data-kind='allin'] {
+  color: var(--accent);
+}
+.seat__gain {
+  color: var(--gain);
+  font-size: var(--fs-sm);
+  letter-spacing: 0;
+  animation: gain-in var(--dur-3) var(--ease);
+}
+.seat__gain .amount-unit {
+  color: var(--gain);
+  opacity: 0.7;
+}
+
+/* Seat states */
+.seat[data-active] .seat__plate {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 8px 18px -10px rgba(0, 0, 0, 0.9);
+}
+.seat[data-active] .seat__avatar {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.seat[data-status='folded'] .seat__plate {
+  opacity: 0.42;
+}
+.seat[data-status='allin'] .seat__plate {
+  border-color: var(--accent-line);
+}
+.seat[data-winner] .seat__plate {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 8px 18px -10px rgba(0, 0, 0, 0.9);
+}
+.seat[data-loser] .seat__plate {
+  opacity: 0.55;
+}
+
+/* Compact layout when the stage is short */
+@container (max-height: 330px) {
+  .seat__cards:not([data-revealed]) {
+    display: none;
+  }
+  .stage__center {
+    gap: 6px;
+  }
+  .pot {
+    min-height: 36px;
+  }
+  .pot__value {
+    font-size: var(--fs-lg);
+  }
+}
+
+@container (max-width: 380px) {
+  .seat {
+    width: 82px;
+  }
+  .seat__plate {
+    min-width: 76px;
+    gap: 5px;
+    padding: 3px 9px 3px 3px;
+  }
+  .seat__avatar {
+    width: 22px;
+    height: 22px;
+  }
+  .seat__name {
+    max-width: 46px;
+  }
+  .bet {
+    padding: 3px 8px;
+  }
+  .bet .chipstack__discs,
+  .pot__chips {
+    display: none;
+  }
+  .pot__value {
+    font-size: var(--fs-lg);
+  }
+}
+
+/* Roomy layout on large stages: bigger seats, same composition. */
+@container (min-width: 720px) {
+  .seat {
+    width: 120px;
+  }
+  .seat__plate {
+    min-width: 112px;
+    gap: 9px;
+    padding: 6px 16px 6px 6px;
+  }
+  .seat__avatar {
+    width: 34px;
+    height: 34px;
+    font-size: var(--fs-sm);
+  }
+  .seat__name {
+    max-width: 76px;
+    font-size: var(--fs-sm);
+  }
+  .seat__stack,
+  .bet__amount,
+  .chipstack__amount {
+    font-size: var(--fs-md);
+  }
+  .seat__cards .pcard[data-size='xs'] {
+    --card-w: 36px;
+  }
+  .seat__cards .pcard[data-size='sm'] {
+    --card-w: 52px;
+  }
+  .pot__value {
+    font-size: var(--fs-hero);
+  }
+}
+
+@keyframes bump {
+  0% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes bet-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+}
+@keyframes bet-sweep {
+  to {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.6);
+  }
+}
+@keyframes think {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+  }
+  80% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+@keyframes gain-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

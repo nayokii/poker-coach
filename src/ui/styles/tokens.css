@@ -1,0 +1,80 @@
+/* Design tokens: the single source of truth for color, spacing, type, radius and motion. */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces: hierarchy by luminance, not by borders or shadows. */
+  --bg: #0a0c0f;
+  --surface-1: #101318;
+  --surface-2: #161a20;
+  --surface-3: #1e232b;
+  --surface-4: #272d37;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --text: #edeff3;
+  --text-2: #9aa3b2;
+  --text-3: #7b8597;
+
+  /* Functional colors: accent = interaction, danger = fold/loss, gain = money won. */
+  --accent: #7aa2ff;
+  --accent-strong: #5f8bf5;
+  --accent-ink: #0a0c0f;
+  --accent-soft: rgba(122, 162, 255, 0.14);
+  --accent-line: rgba(122, 162, 255, 0.55);
+  --danger: #ff7080;
+  --danger-soft: rgba(255, 112, 128, 0.14);
+  --gain: #5dd6a2;
+
+  /* Cards (four-color deck keeps suits instantly distinguishable on a phone) */
+  --paper: #f5f2eb;
+  --paper-edge: #d9d4c8;
+  --ink: #171a21;
+  --suit-s: #1b1f27;
+  --suit-h: #d6314a;
+  --suit-d: #2b6bd9;
+  --suit-c: #1e8c58;
+
+  /* Table */
+  --felt-1: #14201f;
+  --felt-2: #0d1515;
+  --rail: #1a2224;
+
+  /* Spacing (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* Typography: 6 sizes only. */
+  --font-ui: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 26px;
+  --fs-hero: 36px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 220ms;
+  --dur-3: 420ms;
+
+  /* Layout */
+  --header-h: 52px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tap: 48px;
+}

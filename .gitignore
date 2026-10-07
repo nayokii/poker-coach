@@ -1,0 +1,22 @@
+# dependencies and build output
+node_modules
+dist
+dist-ssr
+coverage
+
+# secrets and local environment (the app needs none; keep it that way)
+.env
+.env.*
+!.env.example
+
+# Vercel CLI link
+.vercel
+
+# logs and OS files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# personal tool settings
+.claude/settings.local.json

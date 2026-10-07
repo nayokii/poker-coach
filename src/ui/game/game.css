@@ -1,0 +1,355 @@
+/* Game screen layout: header / table / hero / dock. The table takes whatever height is left. */
+.game {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: var(--safe-top);
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(122, 162, 255, 0.05), transparent 70%),
+    var(--bg);
+}
+.game__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+.game__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  max-width: 1040px;
+}
+.game__aside {
+  display: none;
+}
+
+/* Hero ------------------------------------------------------------------- */
+.hero {
+  --card-w: clamp(56px, min(17vw, 11.5dvh), 84px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-4);
+  margin: 0 var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.hero[data-active] {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.hero[data-winner] {
+  border-color: var(--accent-line);
+}
+.hero__cards {
+  display: flex;
+  flex: none;
+  padding-top: 6px;
+}
+.hero__card--0 {
+  rotate: -4deg;
+  transform-origin: bottom right;
+}
+.hero__card--1 {
+  rotate: 4deg;
+  margin-left: calc(var(--card-w) * -0.1);
+  transform-origin: bottom left;
+}
+.hero__info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.hero__row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.hero__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.hero__stack {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: 1;
+}
+.hero__stack .amount-unit {
+  font-size: var(--fs-sm);
+}
+.hero__status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px var(--s-2);
+  min-height: 20px;
+}
+.hero__hand {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text-2);
+}
+.dealer--inline {
+  position: static;
+  box-shadow: none;
+}
+
+/* While sizing a bet the hero panel shrinks so the table keeps room. */
+.game[data-sizing] .hero {
+  --card-w: 44px;
+  padding: var(--s-2) var(--s-3);
+}
+.game[data-sizing] .hero__status,
+.game[data-sizing] .hero__row .badge {
+  display: none;
+}
+.game[data-sizing] .hero__stack {
+  font-size: var(--fs-lg);
+}
+
+/* Dock -------------------------------------------------------------------- */
+.dock {
+  padding: var(--s-3) var(--s-4) calc(var(--s-3) + var(--safe-bottom));
+  min-height: calc(64px + var(--s-3) * 2 + var(--safe-bottom));
+}
+.dock > * {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* Result ---------------------------------------------------------------------- */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  animation: result-in var(--dur-3) var(--ease);
+}
+.result__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+.result__text {
+  min-width: 0;
+}
+.result__title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+.result__detail,
+.result__hero-hand {
+  margin: 3px 0 0;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.result__hero-hand {
+  color: var(--text-3);
+}
+.result__net {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+.result__net-value {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.result__net[data-sign='pos'] .result__net-value,
+.result__net[data-sign='pos'] .amount-unit {
+  color: var(--gain);
+}
+.result__net[data-sign='neg'] .result__net-value {
+  color: var(--text-2);
+}
+.result__pots {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.result__pots li {
+  display: grid;
+  grid-template-columns: 92px auto 1fr;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: 9px var(--s-3);
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.result__pot-winner {
+  text-align: right;
+  color: var(--text-2);
+  font-weight: 500;
+}
+.result__refund {
+  margin: -4px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.result__refund span {
+  display: block;
+}
+
+/* Session over ----------------------------------------------------------------- */
+.session-over__lead {
+  margin: 0 0 var(--s-4);
+  color: var(--text-2);
+}
+.session-over__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-5);
+}
+.session-over__stats div {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+}
+.session-over__stats dd {
+  margin: 4px 0 0;
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+.session-over__stats dd[data-sign='pos'] {
+  color: var(--gain);
+}
+
+/* Hand log ---------------------------------------------------------------------- */
+.handlog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin-top: var(--s-3);
+  font-size: var(--fs-sm);
+}
+.handlog__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0 0 6px;
+}
+.handlog__cards {
+  display: inline-flex;
+  gap: 4px;
+}
+.logcard {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--suit-s);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.logcard svg {
+  width: 11px;
+  height: 11px;
+}
+.logcard[data-suit='h'] { color: var(--suit-h); }
+.logcard[data-suit='d'] { color: var(--suit-d); }
+.logcard[data-suit='c'] { color: var(--suit-c); }
+.handlog ol {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.handlog li {
+  display: grid;
+  grid-template-columns: minmax(48px, auto) 1fr auto;
+  gap: var(--s-2);
+  color: var(--text-2);
+}
+.handlog__who {
+  font-weight: 600;
+  color: var(--text);
+}
+.handlog__pot {
+  color: var(--text-3);
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Short phones: tighten the hero so the table keeps room. */
+@media (max-height: 720px) {
+  .hero {
+    padding: var(--s-2) var(--s-3);
+  }
+  .hero__stack {
+    font-size: var(--fs-lg);
+  }
+  .result__title {
+    font-size: var(--fs-lg);
+  }
+}
+
+/* Desktop: breathe. Table stays a table; the log appears as a quiet side column. */
+@media (min-width: 900px) {
+  .hero {
+    margin: 0 auto;
+    width: min(520px, 100%);
+  }
+  .dock {
+    padding-bottom: var(--s-5);
+  }
+}
+@media (min-width: 1180px) {
+  .game__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 720px);
+    gap: var(--s-5);
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--s-5);
+  }
+  .game__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    align-self: start;
+    max-height: calc(100% - var(--s-5));
+    overflow-y: auto;
+    margin-top: var(--s-3);
+  }
+}
+
+.game__aside-body {
+  min-height: 0;
+}
