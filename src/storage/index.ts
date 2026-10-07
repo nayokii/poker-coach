@@ -2,3 +2,5 @@ export * from './settings';
 export * from './session';
 export * from './ranges';
 export * from './coachPrefs';
+export * from './theme';
+export * from './rangeLab';

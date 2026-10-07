@@ -37,7 +37,7 @@
   color: var(--accent-ink);
 }
 .btn--primary:hover:not(:disabled) {
-  background: #8fb0ff;
+  background: var(--accent-hover);
 }
 .btn--secondary {
   background: var(--surface-3);
@@ -116,19 +116,19 @@
   background: var(--surface-1);
 }
 .badge--accent {
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent-line);
   background: var(--accent-soft);
 }
 .badge--danger {
   color: var(--danger);
-  border-color: rgba(255, 112, 128, 0.4);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
   background: var(--danger-soft);
 }
 .badge--gain {
   color: var(--gain);
-  border-color: rgba(93, 214, 162, 0.4);
-  background: rgba(93, 214, 162, 0.1);
+  border-color: color-mix(in srgb, var(--gain) 40%, transparent);
+  background: color-mix(in srgb, var(--gain) 10%, transparent);
 }
 
 /* Segmented control (settings) ------------------------------------------ */
@@ -165,7 +165,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(4, 5, 7, 0.66);
+  background: var(--scrim);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: fade-in var(--dur-2) var(--ease);

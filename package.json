@@ -15,7 +15,8 @@
     "generate-icons": "pwa-assets-generator",
     "dev:tunnel": "node scripts/dev-tunnel.mjs",
     "preview:tunnel": "node scripts/dev-tunnel.mjs --preview",
-    "check:deploy": "node scripts/check-deploy.mjs"
+    "check:deploy": "node scripts/check-deploy.mjs",
+    "check": "npm run typecheck && npm run check:deploy"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

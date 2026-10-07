@@ -48,9 +48,9 @@ describe('RangeMatrix', () => {
 
   it('describes every cell for assistive tech (combos available and state)', () => {
     render(<RangeMatrix range={parseRange('AKs')} dead={parseCards('As Ks')} brush={1} focused={null} onPaint={() => {}} onFocusCell={() => {}} />);
-    expect(cell('AKs').getAttribute('aria-label')).toBe('AKs, suited, 3 of 4 combos available, selected');
-    expect(cell('AA').getAttribute('aria-label')).toContain('pocket pair');
-    expect(cell('AKo').getAttribute('aria-label')).toContain('6 of 12 combos available'); // AKo loses the 3 + 3 combos with As or Ks
+    expect(cell('AKs').getAttribute('aria-label')).toBe('AKs, suited, 3 combos disponibles sur 4, sélectionnée');
+    expect(cell('AA').getAttribute('aria-label')).toContain('paire');
+    expect(cell('AKo').getAttribute('aria-label')).toContain('6 combos disponibles sur 12'); // AKo loses the 3 + 3 combos with As or Ks
   });
 });
 
@@ -125,7 +125,7 @@ describe('RangeEditor: percent brushes are real weights', () => {
     expect(state('QQ')).toBe('partial');
     expect(totalWeight(last!)).toBeCloseTo(3, 12);
     expect(comboCount(last!)).toBe(6);
-    expect(screen.getByRole('region', { name: 'Hand QQ' })).toHaveTextContent('50%');
+    expect(screen.getByRole('region', { name: 'Main QQ' })).toHaveTextContent('50%');
     // the same tap again clears it
     fireEvent.pointerDown(cell('QQ'));
     fireEvent.pointerUp(cell('QQ'));
@@ -138,14 +138,14 @@ describe('RangeEditor: percent brushes are real weights', () => {
     render(<Harness onRange={(r) => (last = r)} />);
     fireEvent.pointerDown(cell('AKs'));
     fireEvent.pointerUp(cell('AKs'));
-    const inspector = screen.getByRole('region', { name: 'Hand AKs' });
+    const inspector = screen.getByRole('region', { name: 'Main AKs' });
     await user.click(within(inspector).getByRole('button', { name: '25%' }));
     expect(totalWeight(last!)).toBeCloseTo(1, 12);
     expect(state('AKs')).toBe('partial');
     await user.click(within(inspector).getByRole('button', { name: '100%' }));
     expect(state('AKs')).toBe('full');
     // switch one combo off: the cell becomes partial with 3 of 4 combos
-    await user.click(within(inspector).getAllByRole('button', { name: /, 100%$/ })[0]!);
+    await user.click(within(inspector).getAllByRole('button', { name: /, 100 %$/ })[0]!);
     expect(comboCount(last!)).toBe(3);
     expect(state('AKs')).toBe('partial');
   });
@@ -156,12 +156,11 @@ describe('RangeEditor: blockers', () => {
     render(<Harness dead={parseCards('As Ks')} />);
     fireEvent.pointerDown(cell('AKs')); // selects AKs (4 combos in the range, 3 still possible)
     fireEvent.pointerUp(cell('AKs'));
-    const inspector = screen.getByRole('region', { name: 'Hand AKs' });
-    expect(inspector).toHaveTextContent('3 / 4 combos');
-    expect(inspector).toHaveTextContent('1 blocked');
+    const inspector = screen.getByRole('region', { name: 'Main AKs' });
+    expect(inspector).toHaveTextContent('3 combos disponibles sur 4 normalement');
+    expect(inspector).toHaveTextContent('retirent 1 combo');
     const blocked = within(inspector).getAllByRole('button').filter((b) => (b as HTMLButtonElement).disabled && b.className.includes('combo'));
     expect(blocked).toHaveLength(1);
-    expect(screen.getByText(/possible with known cards/)).toHaveTextContent('3 / 4');
   });
 
   it('a cell whose combos are all blocked is disabled and cannot be painted', () => {
@@ -180,10 +179,10 @@ describe('RangeEditor: text input uses the engine parser', () => {
     const user = userEvent.setup();
     let last: Range | undefined;
     render(<Harness onRange={(r) => (last = r)} />);
-    const input = screen.getByLabelText('Range text');
+    const input = screen.getByLabelText('Texte de la range');
     await user.clear(input);
     await user.type(input, '22+, AJs+, KQs, AQo+');
-    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    await user.click(screen.getByRole('button', { name: 'Appliquer' }));
     expect(comboCount(last!)).toBe(parseRange('22+, AJs+, KQs, AQo+').entries.length);
     for (const l of ['AA', '22', 'AJs', 'AKs', 'KQs', 'AQo', 'AKo']) expect(state(l), l).toBe('full');
     for (const l of ['KJs', 'AJo', 'T9s', '72o']) expect(state(l), l).toBe('none');
@@ -193,10 +192,10 @@ describe('RangeEditor: text input uses the engine parser', () => {
   it('shows the offending token when the notation is wrong and keeps the range', async () => {
     const user = userEvent.setup();
     render(<Harness initial={parseRange('AA')} />);
-    const input = screen.getByLabelText('Range text');
+    const input = screen.getByLabelText('Texte de la range');
     await user.clear(input);
     await user.type(input, 'AA, ZZ+');
-    await user.click(screen.getByRole('button', { name: 'Apply' }));
+    await user.click(screen.getByRole('button', { name: 'Appliquer' }));
     expect(screen.getByRole('alert')).toHaveTextContent('ZZ+');
     expect(state('AA')).toBe('full');
     expect(input).toHaveAttribute('aria-invalid', 'true');
@@ -205,7 +204,7 @@ describe('RangeEditor: text input uses the engine parser', () => {
   it('typing then pressing Enter applies', async () => {
     const user = userEvent.setup();
     render(<Harness />);
-    const input = screen.getByLabelText('Range text');
+    const input = screen.getByLabelText('Texte de la range');
     await user.type(input, 'TT+{Enter}');
     expect(state('TT')).toBe('full');
     expect(state('99')).toBe('none');
@@ -217,14 +216,14 @@ describe('RangeEditor: clear, all, invert', () => {
     const user = userEvent.setup();
     let last: Range | undefined;
     render(<Harness initial={parseRange('AA')} onRange={(r) => (last = r)} />);
-    await user.click(screen.getByRole('button', { name: 'All' }));
+    await user.click(screen.getByRole('button', { name: 'Tout' }));
     expect(comboCount(last!)).toBe(1326);
     expect(state('72o')).toBe('full');
-    await user.click(screen.getByRole('button', { name: 'Invert' }));
+    await user.click(screen.getByRole('button', { name: 'Inverser' }));
     expect(comboCount(last!)).toBe(0);
-    await user.click(screen.getByRole('button', { name: 'Invert' }));
+    await user.click(screen.getByRole('button', { name: 'Inverser' }));
     expect(comboCount(last!)).toBe(1326);
-    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await user.click(screen.getByRole('button', { name: 'Vider' }));
     expect(comboCount(last!)).toBe(0);
     expect(state('AA')).toBe('none');
   });
@@ -235,15 +234,15 @@ describe('RangeEditor: library', () => {
     const user = userEvent.setup();
     let last: Range | undefined;
     render(<Harness initial={parseRange('QQ+, AKs')} onRange={(r) => (last = r)} />);
-    await user.type(screen.getByLabelText('Name to save this range under'), 'Value 3bet');
-    await user.click(screen.getByRole('button', { name: 'Save range' }));
+    await user.type(screen.getByLabelText('Nom de la range à sauvegarder'), 'Value 3bet');
+    await user.click(screen.getByRole('button', { name: 'Sauvegarder la range' }));
     expect(JSON.parse(localStorage.getItem('poker-coach:ranges:v1')!)[0]).toMatchObject({ name: 'Value 3bet' });
 
-    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await user.click(screen.getByRole('button', { name: 'Vider' }));
     expect(comboCount(last!)).toBe(0);
-    const select = screen.getByLabelText('Load a range');
+    const select = screen.getByLabelText('Charger une range');
     await user.selectOptions(select, screen.getByRole('option', { name: 'Value 3bet' }));
-    await user.click(screen.getByRole('button', { name: 'Load selected range' }));
+    await user.click(screen.getByRole('button', { name: 'Charger la range choisie' }));
     expect(comboCount(last!)).toBe(3 * 6 + 4);
     expect(state('QQ')).toBe('full');
     expect(state('AKs')).toBe('full');
@@ -253,16 +252,16 @@ describe('RangeEditor: library', () => {
     const user = userEvent.setup();
     let last: Range | undefined;
     render(<Harness onRange={(r) => (last = r)} />);
-    await user.selectOptions(screen.getByLabelText('Load a range'), screen.getByRole('option', { name: /^Nit/ }));
-    await user.click(screen.getByRole('button', { name: 'Load selected range' }));
+    await user.selectOptions(screen.getByLabelText('Charger une range'), screen.getByRole('option', { name: /^Nit/ }));
+    await user.click(screen.getByRole('button', { name: 'Charger la range choisie' }));
     expect(comboCount(last!)).toBe(comboCount(botRange('nit')));
     expect(state('AA')).toBe('full');
     expect(state('99')).toBe('none');
 
-    await user.type(screen.getByLabelText('Name to save this range under'), 'Temp');
-    await user.click(screen.getByRole('button', { name: 'Save range' }));
-    await user.selectOptions(screen.getByLabelText('Load a range'), screen.getByRole('option', { name: 'Temp' }));
-    await user.click(screen.getByRole('button', { name: 'Delete selected saved range' }));
+    await user.type(screen.getByLabelText('Nom de la range à sauvegarder'), 'Temp');
+    await user.click(screen.getByRole('button', { name: 'Sauvegarder la range' }));
+    await user.selectOptions(screen.getByLabelText('Charger une range'), screen.getByRole('option', { name: 'Temp' }));
+    await user.click(screen.getByRole('button', { name: 'Supprimer la range sauvegardée' }));
     expect(screen.queryByRole('option', { name: 'Temp' })).toBeNull();
     expect(JSON.parse(localStorage.getItem('poker-coach:ranges:v1')!)).toEqual([]);
   });
@@ -270,15 +269,15 @@ describe('RangeEditor: library', () => {
   it('refuses to save without a name or an empty range', async () => {
     const user = userEvent.setup();
     render(<Harness initial={parseRange('AA')} />);
-    await user.click(screen.getByRole('button', { name: 'Save range' }));
-    expect(await screen.findByText('Give the range a name first')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sauvegarder la range' }));
+    expect(await screen.findByText('Donne d’abord un nom à la range')).toBeInTheDocument();
     expect(localStorage.getItem('poker-coach:ranges:v1')).toBeNull();
   });
 });
 
 describe('RangeLab', () => {
   const setRange = async (user: ReturnType<typeof userEvent.setup>, text: string) => {
-    const input = screen.getByLabelText('Range text');
+    const input = screen.getByLabelText('Texte de la range');
     await user.clear(input);
     await user.type(input, `${text}{Enter}`);
   };
@@ -290,22 +289,22 @@ describe('RangeLab', () => {
         <RangeLab />
       </ToastProvider>,
     );
-    await user.type(screen.getByLabelText('Hero cards'), 'As Ks');
+    await user.type(screen.getByLabelText('Cartes du héros'), 'As Ks');
     await user.type(screen.getByLabelText('Board'), 'Jd 8s 4c');
     await setRange(user, 'AA, KK');
-    expect(screen.getByRole('radio', { name: /Range A · 0\.9%/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Range A · 0,9 %/ })).toBeInTheDocument();
     expect(state('AA')).toBe('full');
-    expect(cell('AA').getAttribute('aria-label')).toContain('3 of 6 combos available'); // the ace of spades blocks 3
+    expect(cell('AA').getAttribute('aria-label')).toContain('3 combos disponibles sur 6'); // the ace of spades blocks 3
 
     await user.click(screen.getByRole('radio', { name: /Range B/ }));
     await setRange(user, 'QQ, TT');
-    await user.click(screen.getByRole('button', { name: 'Compute equity' }));
-    const result = await screen.findByRole('region', { name: 'Equity result' });
+    await user.click(screen.getByRole('button', { name: 'Calculer l’équité' }));
+    const result = await screen.findByRole('region', { name: 'Résultat de l’équité' });
     expect(result).toHaveTextContent('Exact');
-    expect(result).toHaveTextContent('possible matchups');
-    expect(result).toHaveTextContent('As Ks vs A');
+    expect(result).toHaveTextContent('confrontations possibles');
+    expect(result).toHaveTextContent('As Ks contre A');
     // equities sum to 100%
-    const values = [...result.querySelectorAll('.side__eq')].map((e) => parseFloat(e.textContent!));
+    const values = [...result.querySelectorAll('.side__eq')].map((e) => parseFloat(e.textContent!.replace(',', '.')));
     expect(values[0]! + values[1]!).toBeCloseTo(100, 0);
   });
 
@@ -319,11 +318,11 @@ describe('RangeLab', () => {
     await setRange(user, '22+, A2s+, K9s+, ATo+');
     await user.click(screen.getByRole('radio', { name: /Range B/ }));
     await setRange(user, '55+, ATs+, KQs, AJo+');
-    await user.click(screen.getByRole('button', { name: 'Compute equity' }));
-    const result = await screen.findByRole('region', { name: 'Equity result' });
-    await waitFor(() => expect(result).toHaveTextContent('Estimated'));
-    expect(result).toHaveTextContent('20 000 samples');
-    expect(result).toHaveTextContent('seed 1');
+    await user.click(screen.getByRole('button', { name: 'Calculer l’équité' }));
+    const result = await screen.findByRole('region', { name: 'Résultat de l’équité' });
+    await waitFor(() => expect(result).toHaveTextContent('Estimé'));
+    expect(result).toHaveTextContent('20 000 tirages');
+    expect(result).toHaveTextContent('graine 1');
   });
 
   it('validates cards and empty ranges before computing', async () => {
@@ -333,12 +332,12 @@ describe('RangeLab', () => {
         <RangeLab />
       </ToastProvider>,
     );
-    await user.click(screen.getByRole('button', { name: 'Compute equity' }));
-    expect(await screen.findByText('Both ranges need at least one hand.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Calculer l’équité' }));
+    expect(await screen.findByText('Les deux ranges doivent contenir au moins une main.')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Board'), 'Jd 8s');
-    expect(screen.getAllByRole('alert')[0]).toHaveTextContent('Board: 3, 4, 5 cards expected');
+    expect(screen.getAllByRole('alert')[0]).toHaveTextContent('Board : 3, 4, 5 cartes attendues');
     await user.clear(screen.getByLabelText('Board'));
-    await user.type(screen.getByLabelText('Hero cards'), 'zz');
-    expect(screen.getAllByRole('alert')[0]).toHaveTextContent('Hero cards: cannot read cards');
+    await user.type(screen.getByLabelText('Cartes du héros'), 'zz');
+    expect(screen.getAllByRole('alert')[0]).toHaveTextContent('Cartes du héros : cartes illisibles');
   });
 });

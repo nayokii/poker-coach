@@ -1,5 +1,12 @@
-/* Design tokens: the single source of truth for color, spacing, type, radius and motion. */
-:root {
+/*
+ * Design tokens: the single source of truth for color, spacing, type, radius and motion.
+ *
+ * Two themes share the same token names. Dark is the default (no attribute, or data-theme="dark");
+ * data-theme="light" overrides the color tokens only. Components never use a raw color: they read tokens,
+ * so a theme is one block of values, not a second stylesheet. The theme is chosen by ThemeProvider.
+ */
+:root,
+:root[data-theme='dark'] {
   color-scheme: dark;
 
   /* Surfaces: hierarchy by luminance, not by borders or shadows. */
@@ -10,14 +17,19 @@
   --surface-4: #272d37;
   --line: rgba(255, 255, 255, 0.07);
   --line-strong: rgba(255, 255, 255, 0.14);
+  --scrim: rgba(4, 5, 7, 0.66);
+  --glow: rgba(122, 162, 255, 0.06);
 
   /* Text */
   --text: #edeff3;
   --text-2: #9aa3b2;
   --text-3: #7b8597;
 
-  /* Functional colors: accent = interaction, danger = fold/loss, gain = money won. */
+  /* Functional colors: accent = interaction, danger = fold/loss, gain = money won.
+     --accent is a FILL (buttons, selected cells); --accent-text is the same hue readable as text/border on the surface. */
   --accent: #7aa2ff;
+  --accent-text: #7aa2ff;
+  --accent-hover: #8fb0ff;
   --accent-strong: #5f8bf5;
   --accent-ink: #0a0c0f;
   --accent-soft: rgba(122, 162, 255, 0.14);
@@ -34,11 +46,28 @@
   --suit-h: #d6314a;
   --suit-d: #2b6bd9;
   --suit-c: #1e8c58;
+  /* the same suits as small text on the app surface */
+  --suit-h-ui: #ff7a8c;
+  --suit-d-ui: #6ea2ff;
+  --suit-c-ui: #4fd09a;
 
   /* Table */
   --felt-1: #14201f;
   --felt-2: #0d1515;
   --rail: #1a2224;
+  --felt-hi: rgba(255, 255, 255, 0.045);
+  --felt-edge: rgba(255, 255, 255, 0.05);
+  --felt-rim: rgba(255, 255, 255, 0.07);
+  --felt-inner: rgba(0, 0, 0, 0.35);
+  --felt-drop: rgba(0, 0, 0, 0.95);
+  --seat-shadow: rgba(0, 0, 0, 0.9);
+  --bet-bg: rgba(10, 12, 15, 0.78);
+  --dealer-bg: #f1efe8;
+  --slot-line: rgba(255, 255, 255, 0.1);
+  --slot-fill: rgba(255, 255, 255, 0.015);
+  --hatch: rgba(255, 255, 255, 0.05);
+  --thumb: #f4f6fb;
+  --thumb-shadow: rgba(0, 0, 0, 0.6);
 
   /* Spacing (4px base) */
   --s-1: 4px;
@@ -77,4 +106,60 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --tap: 48px;
+}
+
+/*
+ * Light theme: warm stone surfaces (never pure white), ink text, the same blue accent.
+ * The accent keeps its hue as a fill; as text/border it becomes a deeper blue so contrast stays above 4.5:1.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f1eee8;
+  --surface-1: #f8f6f1;
+  --surface-2: #fdfcf9;
+  --surface-3: #ebe7df;
+  --surface-4: #dfdad0;
+  --line: rgba(28, 33, 45, 0.09);
+  --line-strong: rgba(28, 33, 45, 0.17);
+  --scrim: rgba(28, 33, 45, 0.45);
+  --glow: rgba(122, 162, 255, 0.14);
+
+  --text: #171b24;
+  --text-2: #4b5365;
+  --text-3: #5b6375;
+
+  --accent: #7aa2ff;
+  --accent-text: #2a57c8;
+  --accent-hover: #6b97fb;
+  --accent-strong: #3f6fe0;
+  --accent-ink: #0a0c0f;
+  --accent-soft: rgba(63, 111, 224, 0.12);
+  --accent-line: rgba(42, 87, 200, 0.5);
+  --danger: #c42a43;
+  --danger-soft: rgba(196, 42, 67, 0.1);
+  --gain: #0f7a4f;
+
+  --paper: #fbf9f4;
+  --paper-edge: #cfc9bb;
+  --suit-h-ui: #c42a43;
+  --suit-d-ui: #2a5fc4;
+  --suit-c-ui: #1b7a4e;
+
+  --felt-1: #dbe5e1;
+  --felt-2: #c6d4cf;
+  --rail: #b3c3bd;
+  --felt-hi: rgba(255, 255, 255, 0.55);
+  --felt-edge: rgba(255, 255, 255, 0.7);
+  --felt-rim: rgba(28, 40, 36, 0.14);
+  --felt-inner: rgba(20, 40, 34, 0.12);
+  --felt-drop: rgba(30, 45, 40, 0.28);
+  --seat-shadow: rgba(30, 35, 45, 0.28);
+  --bet-bg: rgba(253, 252, 249, 0.92);
+  --dealer-bg: #ffffff;
+  --slot-line: rgba(28, 40, 36, 0.22);
+  --slot-fill: rgba(255, 255, 255, 0.35);
+  --hatch: rgba(28, 33, 45, 0.08);
+  --thumb: #ffffff;
+  --thumb-shadow: rgba(20, 24, 32, 0.35);
 }

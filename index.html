@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0B0D10" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -13,6 +13,21 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <title>Poker Coach</title>
+    <script>
+      // Applies the saved theme before the first paint (no flash). Same rule as resolveTheme() in src/storage/theme.ts.
+      (function () {
+        try {
+          var pref = JSON.parse(localStorage.getItem('poker-coach:theme:v1'));
+          if (pref !== 'dark' && pref !== 'light') pref = 'system';
+          var dark = pref === 'system' ? !window.matchMedia || window.matchMedia('(prefers-color-scheme: dark)').matches : pref === 'dark';
+          var theme = dark ? 'dark' : 'light';
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', dark ? '#0a0c0f' : '#f1eee8');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

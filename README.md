@@ -105,6 +105,12 @@ npm run check:deploy
 
 It verifies `vercel.json`, `.gitignore`, `dist/index.html`, the manifest and its icons, that every file precached by the service worker exists, and that nothing in `dist/` mentions `localhost`, `127.0.0.1`, a LAN address or a tunnel address. It cannot tell whether the Vercel project itself is configured: that is checked in Vercel after the import.
 
+## Appearance and Range Lab help
+
+- **Theme**: Settings -> *Apparence* offers Sombre / Clair / Système. The choice is stored in `localStorage` (`poker-coach:theme:v1`), applies immediately (no reload) and "Système" follows `prefers-color-scheme` live. Both themes are token sets in `src/ui/styles/tokens.css` (`:root[data-theme='dark' | 'light']`); a tiny inline script in `index.html` sets the theme before the first paint. Known limit: the iOS standalone status bar style is fixed when the app is installed.
+- **Range Lab**: a one-time introduction (`poker-coach:range-intro:v1`), an optional "Comprendre les ranges" guide, a "Range actuelle" summary (numbers come from the Range Engine), plain-language explanation of each cell, and a "Modifier la range" button in the Coach that opens the Range Lab on the assumed range. A range is always shown as a hypothesis.
+- `npm run check` runs the type check and the Vercel readiness check.
+
 ## Architecture
 
 | Folder | Role | Depends on |

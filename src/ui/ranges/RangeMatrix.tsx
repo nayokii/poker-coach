@@ -20,10 +20,16 @@ export interface RangeMatrixProps {
 const shortLabel = (c: MatrixCell): string => `${rankChar(c.handClass.high)}${rankChar(c.handClass.low)}`;
 
 function describe(c: MatrixCell): string {
-  const kind = c.handClass.kind === 'pair' ? 'pocket pair' : c.handClass.kind;
+  const kind = c.handClass.kind === 'pair' ? 'paire' : c.handClass.kind;
   const state =
-    c.state === 'disabled' ? 'all combos blocked' : c.state === 'none' ? 'not selected' : c.state === 'full' ? 'selected' : `partly selected, ${Math.round(c.fraction * 100)}%`;
-  return `${c.label}, ${kind}, ${c.availableCombos} of ${c.totalCombos} combos available, ${state}`;
+    c.state === 'disabled'
+      ? 'toutes les combinaisons sont retirées'
+      : c.state === 'none'
+        ? 'non sélectionnée'
+        : c.state === 'full'
+          ? 'sélectionnée'
+          : `partiellement sélectionnée, ${Math.round(c.fraction * 100)} %`;
+  return `${c.label}, ${kind}, ${c.availableCombos} combos disponibles sur ${c.totalCombos}, ${state}`;
 }
 
 /** 13x13 starting-hand matrix: pairs on the diagonal, suited above, offsuit below. Tap or drag to paint. */
@@ -94,7 +100,7 @@ export function RangeMatrix({ range, dead = [], brush, focused, onPaint, onFocus
       ref={gridRef}
       className="rmatrix"
       role="grid"
-      aria-label="Starting hands matrix. Pairs on the diagonal, suited hands above it, offsuit hands below it."
+      aria-label="Matrice des mains de départ. Les paires sont sur la diagonale, les mains suited au-dessus, les mains offsuit en dessous."
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={end}

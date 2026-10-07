@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import { clearSession, loadSession, loadSettings, saveSettings, type SavedSession, type Settings } from '../../storage';
 import { ToastProvider } from '../design-system';
+import { ThemeProvider } from '../theme/ThemeProvider';
 import { GameScreen } from '../game/GameScreen';
-import { RangeLab } from '../ranges/RangeLab';
+import { RangeLab, type RangeLabRequest } from '../ranges/RangeLab';
 import { BottomNav } from './BottomNav';
 import { MenuSheet } from './MenuSheet';
 import { SettingsModal } from './SettingsModal';
@@ -19,6 +20,7 @@ export function App() {
   const [screen, setScreen] = useState<Screen>({ mode: 'welcome' });
   const [overlay, setOverlay] = useState<Overlay>('none');
   const [section, setSection] = useState<SectionId>('play');
+  const [rangeRequest, setRangeRequest] = useState<RangeLabRequest | null>(null);
 
   const updateSettings = useCallback((s: Settings) => {
     setSettings(s);
@@ -47,6 +49,7 @@ export function App() {
   const showNav = sections.length > 1 && !inGame;
 
   return (
+    <ThemeProvider>
     <ToastProvider>
       <div className="app-shell">
         <div className="app-main">
@@ -64,11 +67,15 @@ export function App() {
                 onCloseLog={() => setOverlay('none')}
                 coachOpen={overlay === 'coach'}
                 onCloseCoach={() => setOverlay('none')}
+                onEditRange={(req) => {
+                  setRangeRequest((cur) => ({ ...req, id: (cur?.id ?? 0) + 1 }));
+                  setSection('ranges');
+                }}
               />
             )}
           </div>
           <div hidden={section !== 'ranges'} className="app-section">
-            <RangeLab />
+            <RangeLab request={rangeRequest} />
           </div>
         </div>
         {showNav && <BottomNav sections={sections} current={section} onSelect={setSection} />}
@@ -89,5 +96,6 @@ export function App() {
       )}
       {overlay === 'settings' && <SettingsModal settings={settings} onChange={updateSettings} onClose={() => setOverlay('none')} />}
     </ToastProvider>
+    </ThemeProvider>
   );
 }

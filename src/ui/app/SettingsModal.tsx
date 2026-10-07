@@ -1,10 +1,12 @@
 import { MAX_BOTS } from '../../ai';
 import { BLIND_OPTIONS, STACK_OPTIONS, type Settings } from '../../storage';
 import { Modal, Segmented, useToast } from '../design-system';
+import { useTheme } from '../theme/ThemeProvider';
 import './app.css';
 
 export function SettingsModal({ settings, onChange, onClose }: { settings: Settings; onChange: (s: Settings) => void; onClose: () => void }) {
   const toast = useToast();
+  const { pref, setPref } = useTheme();
   const set = <K extends keyof Settings>(key: K, value: Settings[K]): void => onChange({ ...settings, [key]: value });
   const setTable = <K extends 'bots' | 'bigBlind' | 'stackBB'>(key: K, value: Settings[K]): void => {
     set(key, value);
@@ -14,6 +16,20 @@ export function SettingsModal({ settings, onChange, onClose }: { settings: Setti
   return (
     <Modal title="Settings" onClose={onClose}>
       <div className="settings">
+        <div className="field">
+          <span className="label">Apparence</span>
+          <Segmented
+            label="Apparence"
+            value={pref}
+            options={[
+              { value: 'dark', label: 'Sombre' },
+              { value: 'light', label: 'Clair' },
+              { value: 'system', label: 'Système' },
+            ]}
+            onChange={setPref}
+          />
+          {pref === 'system' && <span className="field__hint">Suit le réglage de ton appareil.</span>}
+        </div>
         <div className="field">
           <span className="label">Show amounts in</span>
           <Segmented

@@ -47,7 +47,7 @@
   overflow-y: auto;
   padding: calc(var(--safe-top) + var(--s-6)) var(--s-5) calc(var(--safe-bottom) + var(--s-5));
   background:
-    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(122, 162, 255, 0.08), transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 0%, var(--glow), transparent 70%),
     var(--bg);
 }
 .welcome__inner {
@@ -213,5 +213,7 @@
   text-transform: uppercase;
 }
 .bottom-nav button[aria-current='page'] {
-  color: var(--accent);
+  color: var(--accent-text);
 }
+
+.field__hint { margin: 4px 0 0; font-size: var(--fs-xs); color: var(--text-3); }

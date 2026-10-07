@@ -4,7 +4,7 @@
   overflow-y: auto;
   padding: calc(var(--safe-top) + var(--s-5)) var(--s-4) var(--s-6);
   background:
-    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(122, 162, 255, 0.06), transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 0%, var(--glow), transparent 70%),
     var(--bg);
   -webkit-overflow-scrolling: touch;
 }
@@ -176,7 +176,7 @@
 }
 .rcell[data-state='disabled'] {
   background:
-    repeating-linear-gradient(135deg, transparent 0 3px, rgba(255, 255, 255, 0.05) 3px 4px),
+    repeating-linear-gradient(135deg, transparent 0 3px, var(--hatch) 3px 4px),
     var(--surface-1);
   color: var(--text-3);
   opacity: 0.55;
@@ -287,9 +287,9 @@
   width: 11px;
   height: 11px;
 }
-.combo__card[data-suit='h'] { color: #ff7a8c; }
-.combo__card[data-suit='d'] { color: #6ea2ff; }
-.combo__card[data-suit='c'] { color: #4fd09a; }
+.combo__card[data-suit='h'] { color: var(--suit-h-ui); }
+.combo__card[data-suit='d'] { color: var(--suit-d-ui); }
+.combo__card[data-suit='c'] { color: var(--suit-c-ui); }
 .combo__w {
   font-size: var(--fs-xs);
   color: var(--text-2);
@@ -330,7 +330,7 @@
   font-weight: 700;
   line-height: 1.05;
 }
-.side[data-tone='a'] .side__eq { color: var(--accent); }
+.side[data-tone='a'] .side__eq { color: var(--accent-text); }
 .side__stats {
   display: grid;
   gap: 2px;
@@ -389,4 +389,282 @@
 }
 .chip {
   flex: 1 1 auto;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Phase 7: understanding the Range Lab. Quiet by default, detail on demand.
+   --------------------------------------------------------------------------------------------- */
+.lab__top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  max-width: 1100px;
+  margin: 0 auto var(--s-4);
+}
+
+/* First-use introduction */
+.rintro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  border: 1px solid var(--accent-line);
+  animation: result-in var(--dur-3) var(--ease);
+}
+.rintro__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.rintro__lead {
+  margin: -4px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+}
+.rintro__steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-md);
+}
+.rintro__steps li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.rintro__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* Collapsible guide */
+.rguide {
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+}
+.rguide__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: left;
+}
+.rguide__toggle svg {
+  transition: transform var(--dur-2) var(--ease);
+}
+.rguide__toggle svg[data-open] {
+  transform: rotate(180deg);
+}
+.rguide__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: 0 var(--s-4) var(--s-4);
+}
+.rguide__lead {
+  margin: 0;
+  font-size: var(--fs-md);
+}
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.guide p {
+  margin: 0;
+}
+.guide strong,
+.legend strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.guide__h {
+  margin: var(--s-2) 0 -6px;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text);
+}
+.guide__note {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  margin: 0;
+}
+
+/* Mini matrix: where pairs, suited and offsuit hands sit */
+.mini {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  width: 100%;
+  max-width: 260px;
+}
+.mini__cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1.35;
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.mini__cell[data-kind='pair'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.mini__cell[data-kind='suited'] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  color: var(--text);
+}
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.legend li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+}
+.legend__dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  border-radius: 3px;
+  background: var(--surface-4);
+}
+.legend__dot[data-kind='pair'] { background: var(--accent); }
+.legend__dot[data-kind='suited'] { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-line); }
+
+/* Summary of the range being edited */
+.rsum {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.rsum__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.rsum__nums {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--text-2);
+}
+.rsum__nums strong {
+  color: var(--text);
+  font-weight: 700;
+}
+.rsum__sep {
+  margin: 0 2px;
+  color: var(--text-3);
+}
+.rsum__dim {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.rsum__why,
+.rsum__warn {
+  margin: var(--s-2) 0 0;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--text-3);
+}
+.rsum__why + .rsum__warn {
+  margin-top: 2px;
+}
+.rsum__warn {
+  color: var(--text-2);
+}
+
+/* Inspector in plain words */
+.inspector__kind {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.inspector__hint {
+  font-weight: 500;
+  color: var(--text-3);
+}
+.inspector__line,
+.inspector__headline,
+.inspector__detail {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.inspector__headline {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text);
+}
+.inspector__line strong {
+  color: var(--text);
+}
+.inspector__blocked-note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--danger-soft);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.inspector__blocked-note strong {
+  color: var(--danger);
+}
+.inspector .chip,
+.inspector .combo {
+  min-height: 44px;
+}
+.lab__hint {
+  line-height: 1.45;
 }

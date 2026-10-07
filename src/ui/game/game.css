@@ -5,7 +5,7 @@
   height: 100%;
   padding-top: var(--safe-top);
   background:
-    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(122, 162, 255, 0.05), transparent 70%),
+    radial-gradient(ellipse 90% 50% at 50% 0%, var(--glow), transparent 70%),
     var(--bg);
 }
 .game__body {

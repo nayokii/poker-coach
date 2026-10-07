@@ -127,7 +127,7 @@
 }
 .draws__outs {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .draws__reason {
   grid-column: 1 / -1;
@@ -181,11 +181,11 @@
 }
 .outs__quality [data-q='clean'] {
   color: var(--gain);
-  border-color: rgba(93, 214, 162, 0.4);
+  border-color: color-mix(in srgb, var(--gain) 40%, transparent);
 }
 .outs__quality [data-q='dirty'] {
   color: var(--danger);
-  border-color: rgba(255, 112, 128, 0.4);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 .outs__odds {
   display: grid;
@@ -291,7 +291,7 @@
 }
 .why__item[data-category='missing_data'] .why__cat,
 .why__item[data-category='limitation'] .why__cat {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .why__text {
   font-size: var(--fs-md);
@@ -323,3 +323,18 @@
     transform: translateY(3px);
   }
 }
+
+.coach__range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.coach__range strong { color: var(--text); }

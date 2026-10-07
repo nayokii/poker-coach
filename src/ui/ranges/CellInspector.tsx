@@ -1,9 +1,8 @@
-import { cardToString } from '../../engine';
-import { cardIndex } from '../../engine';
+import { cardIndex, cardToString, type Card } from '../../engine';
 import { comboCards, handClassCombos, type Combo, type Range } from '../../coach/math';
-import { WEIGHT_PRESETS, comboWeight, type MatrixCell } from '../../coach/ranges';
+import { WEIGHT_PRESETS, cellSelection, comboWeight, type MatrixCell } from '../../coach/ranges';
 import { SuitIcon } from '../cards/PlayingCard';
-import type { Card } from '../../engine';
+import { KIND_TEXT, explainCell } from './cellText';
 import './ranges.css';
 
 export interface CellInspectorProps {
@@ -14,30 +13,46 @@ export interface CellInspectorProps {
   onSetCombo: (combo: Combo, weight: number) => void;
 }
 
-/** Details of one matrix cell: real combos, blockers, exact percent and per-combo switches. */
+/** One hand of the matrix in plain words: what it is, how many combos, how much of it is in the range, what is blocked. */
 export function CellInspector({ cell, range, dead, onSetCell, onSetCombo }: CellInspectorProps) {
   const deadSet = new Set(dead.map(cardIndex));
   const combos = handClassCombos(cell.handClass);
-  const pct = cell.availableCombos === 0 ? 0 : Math.round(cell.fraction * 100);
+  const sel = cellSelection(range, dead, cell.handClass);
+  const words = explainCell(cell.handClass, sel);
+  const kind = KIND_TEXT[cell.handClass.kind];
 
   return (
-    <section className="inspector" aria-label={`Hand ${cell.label}`}>
+    <section className="inspector" aria-label={`Main ${cell.label}`}>
       <div className="inspector__head">
         <h3 className="inspector__title">{cell.label}</h3>
-        <span className="inspector__count num">
-          {cell.availableCombos} / {cell.totalCombos} combos
-          {cell.blockedCombos > 0 && <span className="inspector__blocked"> · {cell.blockedCombos} blocked</span>}
+        <span className="inspector__kind">
+          {kind.name} <span className="inspector__hint">· {kind.hint}</span>
         </span>
-        <span className="inspector__pct num">{pct}%</span>
+        <span className="inspector__pct num" aria-hidden="true">
+          {sel.percent} %
+        </span>
       </div>
 
-      <div className="inspector__weights" role="group" aria-label="Frequency of every combo of this hand">
+      <p className="inspector__line">
+        <strong className="num">{cell.totalCombos} combos</strong> au total pour cette main.
+      </p>
+      <p className="inspector__headline">{words.headline}</p>
+      {words.detail && <p className="inspector__detail">{words.detail}</p>}
+
+      {words.blocked && (
+        <p className="inspector__blocked-note" role="note">
+          <strong className="num">{words.blocked.available}</strong>
+          <span>{words.blocked.reason}</span>
+        </p>
+      )}
+
+      <div className="inspector__weights" role="group" aria-label="Part de cette main dans la range">
         {WEIGHT_PRESETS.map((w) => (
           <button
             key={w}
             type="button"
             className="chip"
-            aria-pressed={cell.availableCombos > 0 && Math.abs(cell.fraction - w) < 1e-9 && combos.every((c) => deadSet.has(c.a) || deadSet.has(c.b) || comboWeight(range, c) === w)}
+            aria-pressed={sel.kind !== 'disabled' && sel.percent === w * 100 && (w === 0 ? sel.kind === 'none' : sel.kind === 'full' || sel.kind === 'uniform')}
             disabled={cell.state === 'disabled'}
             onClick={() => onSetCell(w)}
           >
@@ -60,7 +75,7 @@ export function CellInspector({ cell, range, dead, onSetCell, onSetCombo }: Cell
                 data-partial={(w > 0 && w < 1) || undefined}
                 disabled={blocked}
                 aria-pressed={w > 0}
-                aria-label={`${cardToString(x)} ${cardToString(y)}${blocked ? ', blocked by a known card' : ''}, ${Math.round(w * 100)}%`}
+                aria-label={`${cardToString(x)} ${cardToString(y)}${blocked ? ', retiré par une carte connue' : ''}, ${Math.round(w * 100)} %`}
                 onClick={() => onSetCombo(c, w > 0 ? 0 : 1)}
               >
                 {[x, y].map((card) => (

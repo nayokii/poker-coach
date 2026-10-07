@@ -15,7 +15,7 @@ import {
   type Combo, type HandClass,
 } from '../math/combos';
 import { allCombos } from '../math/combos';
-import { totalWeight, type Range, type WeightedCombo } from '../math/ranges';
+import { comboCount, totalWeight, withoutDeadCards, type Range, type WeightedCombo } from '../math/ranges';
 
 export type CellState = 'none' | 'partial' | 'full' | 'disabled';
 
@@ -144,6 +144,75 @@ export function paintCells(range: Range, cells: readonly HandClass[], weight: nu
   const m = toMap(range);
   for (const h of cells) for (const c of handClassCombos(h)) m.set(comboKey(c), { combo: c, weight });
   return fromMap(m);
+}
+
+/** How a cell is selected, in terms a person can read. */
+export type SelectionKind =
+  | 'disabled' // every combo is blocked by a known card
+  | 'none' // nothing selected
+  | 'full' // every available combo at 100%
+  | 'uniform' // every available combo at the same weight below 100% ("50 % of this hand")
+  | 'subset' // some combos at 100%, the others absent ("6 of 12 combos")
+  | 'mixed'; // anything else
+
+export interface CellSelection {
+  kind: SelectionKind;
+  totalCombos: number;
+  availableCombos: number;
+  blockedCombos: number;
+  /** Available combos with a weight above 0. */
+  selectedCombos: number;
+  /** Frequency of every selected combo when `kind` is 'uniform' or 'full' (1 for full). */
+  weightEach: number | null;
+  /** fraction x 100, rounded: the number shown to the user. */
+  percent: number;
+}
+
+/** Plain-language description data of one cell (built from the same combos and weights as the matrix). */
+export function cellSelection(range: Range, dead: readonly Card[], h: HandClass): CellSelection {
+  const deadSet = new Set(dead.map(cardIndex));
+  const map = toMap(range);
+  const combos = handClassCombos(h);
+  const available = combos.filter((c) => !deadSet.has(c.a) && !deadSet.has(c.b));
+  const weights = available.map((c) => weightOf(map, c));
+  const present = weights.filter((w) => w > 0);
+  const total = COMBOS_PER_CLASS[h.kind];
+  const sum = weights.reduce((s, w) => s + w, 0);
+  const base = {
+    totalCombos: total,
+    availableCombos: available.length,
+    blockedCombos: total - available.length,
+    selectedCombos: present.length,
+    percent: available.length === 0 ? 0 : Math.round((sum / available.length) * 100),
+  };
+  if (available.length === 0) return { ...base, kind: 'disabled', weightEach: null };
+  if (present.length === 0) return { ...base, kind: 'none', weightEach: null };
+  if (weights.every((w) => w === 1)) return { ...base, kind: 'full', weightEach: 1 };
+  const first = present[0] as number;
+  if (present.length === available.length && present.every((w) => w === first)) return { ...base, kind: 'uniform', weightEach: first };
+  if (present.every((w) => w === 1)) return { ...base, kind: 'subset', weightEach: null };
+  return { ...base, kind: 'mixed', weightEach: null };
+}
+
+export interface RangeSummary {
+  /** Distinct combos in the range (engine comboCount). */
+  combos: number;
+  /** Sum of the combo weights = the effective number of combos (engine totalWeight). */
+  effectiveCombos: number;
+  /** Share of the 1326 starting hands, in percent. */
+  percent: number;
+  /** Distinct combos still possible once the known cards are removed (engine withoutDeadCards). */
+  possibleCombos: number;
+}
+
+/** Headline numbers of a range: every figure comes from the engine's own functions. */
+export function summarizeRange(range: Range, dead: readonly Card[] = []): RangeSummary {
+  return {
+    combos: comboCount(range),
+    effectiveCombos: totalWeight(range),
+    percent: rangePercent(range),
+    possibleCombos: comboCount(withoutDeadCards(range, dead)),
+  };
 }
 
 export { ALL_HAND_CLASSES, makeCombo, rankChar };

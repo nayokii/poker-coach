@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { PlayerAction } from '../../engine';
+import type { Card, PlayerAction } from '../../engine';
 import type { SavedSession, Settings } from '../../storage';
 import { ActionBar } from '../actions/ActionBar';
 import { FormatProvider } from '../format';
@@ -25,13 +25,15 @@ export interface GameScreenProps {
   onCloseLog: () => void;
   coachOpen?: boolean;
   onCloseCoach?: () => void;
+  /** "Modifier la range" in the Coach: open the Range Lab with that range and these cards. */
+  onEditRange?: (request: { profileId: string; hero: Card[]; board: Card[] }) => void;
   /** Test hooks. */
   seed?: number;
   paceScale?: number;
   provider?: SessionOptions['provider'];
 }
 
-export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, onCloseLog, coachOpen = false, onCloseCoach, seed, paceScale, provider }: GameScreenProps) {
+export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, onCloseLog, coachOpen = false, onCloseCoach, onEditRange, seed, paceScale, provider }: GameScreenProps) {
   const s = useGameSession({ settings, resume, seed, paceScale, provider });
   const { game } = s;
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -44,6 +46,12 @@ export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, o
     setLocalCoach(false);
     onCloseCoach?.();
   };
+  const editRange: GameScreenProps['onEditRange'] = onEditRange
+    ? (req) => {
+        closeCoach();
+        onEditRange(req);
+      }
+    : undefined;
 
   const view = useMemo(() => (s.settled ? buildResultView(game, HERO) : null), [s.settled, game]);
   const showdown = game.handStatus === 'complete' && game.result?.endedBy === 'showdown';
@@ -125,7 +133,7 @@ export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, o
               />
               <div className="game__aside-body">
                 {asideTab === 'coach' ? (
-                  <CoachPanel game={game} visibleBoard={s.board} botProfiles={s.botProfiles} />
+                  <CoachPanel game={game} visibleBoard={s.board} botProfiles={s.botProfiles} onEditRange={editRange} />
                 ) : (
                   <Panel>
                     <HandLog game={game} />
@@ -143,7 +151,7 @@ export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, o
         )}
         {(coachOpen || localCoach) && !wide && (
           <Modal title="Coach" onClose={closeCoach}>
-            <CoachPanel game={game} visibleBoard={s.board} botProfiles={s.botProfiles} />
+            <CoachPanel game={game} visibleBoard={s.board} botProfiles={s.botProfiles} onEditRange={editRange} />
           </Modal>
         )}
         {summaryOpen && (

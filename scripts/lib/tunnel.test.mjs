@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { cloudflaredCandidates, extractTunnelUrl, findCloudflared } from './tunnel.mjs';
 
 describe('extractTunnelUrl', () => {
@@ -30,7 +30,19 @@ describe('cloudflared discovery', () => {
     expect(cloudflaredCandidates({}, 'linux')).toEqual(['cloudflared']);
   });
 
-  it('returns null when nothing usable exists', () => {
-    expect(findCloudflared({ CLOUDFLARED_PATH: 'C:/definitely/not/here.exe', PATH: '' }, 'linux')).toBeNull();
+  it('returns null when nothing usable exists', async () => {
+    // Simulate a machine without cloudflared whatever is really installed here: every probe fails.
+    vi.resetModules();
+    vi.doMock('node:child_process', () => ({ spawnSync: () => ({ error: new Error('ENOENT'), status: null }) }));
+    vi.doMock('node:fs', async (orig) => ({ ...(await orig()), existsSync: () => false }));
+    try {
+      const isolated = await import('./tunnel.mjs?no-cloudflared');
+      expect(isolated.findCloudflared({ CLOUDFLARED_PATH: 'C:/definitely/not/here.exe', PATH: '' }, 'win32')).toBeNull();
+      expect(isolated.findCloudflared({ PATH: '' }, 'linux')).toBeNull();
+    } finally {
+      vi.doUnmock('node:child_process');
+      vi.doUnmock('node:fs');
+      vi.resetModules();
+    }
   });
 });

@@ -19,16 +19,24 @@ export interface RangeEditorProps {
   dead?: readonly Card[];
   /** Accessible name of this editor ("Range A"). */
   label?: string;
+  /** Called with the name of a range loaded from the library ("TAG"), or null as soon as the range is edited by hand. */
+  onSourceLabel?: (label: string | null) => void;
+  /** The Range Lab shows these numbers in its own summary; the standalone editor keeps its compact line. */
+  showStats?: boolean;
 }
 
-const BRUSHES = WEIGHT_PRESETS.map((w) => ({ value: w, label: w === 0 ? 'Erase' : `${w * 100}%` }));
+const BRUSHES = WEIGHT_PRESETS.map((w) => ({ value: w, label: w === 0 ? 'Effacer' : `${w * 100}%` }));
 
 /**
  * Reusable range editor: 13x13 matrix, percent brush, per-cell inspector, range text input (engine parser),
  * clear / all / invert, bot-profile presets and a local library of saved ranges.
  */
-export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: RangeEditorProps) {
+export function RangeEditor({ range, onChange, dead = [], label = 'Range', onSourceLabel, showStats = true }: RangeEditorProps) {
   const toast = useToast();
+  const change = (r: Range, source: string | null = null): void => {
+    onChange(r);
+    onSourceLabel?.(source);
+  };
   const [brush, setBrush] = useState<number>(1);
   const [focused, setFocused] = useState<MatrixCell | null>(null);
   const [draft, setDraft] = useState(() => rangeToString(range));
@@ -50,10 +58,10 @@ export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: Ran
 
   const apply = (): void => {
     try {
-      onChange(parseRange(draft));
+      change(parseRange(draft));
       setError(null);
     } catch (e) {
-      setError(e instanceof RangeParseError ? e.message : 'Cannot read this range');
+      setError(e instanceof RangeParseError ? `Notation non reconnue près de « ${e.token} ».` : 'Range illisible.');
     }
   };
 
@@ -61,33 +69,33 @@ export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: Ran
     if (!loadId) return;
     if (loadId.startsWith('bot:')) {
       const id = loadId.slice(4);
-      onChange(botRange(id));
-      toast(`Loaded ${BOT_RANGE_PROFILES[id]?.label} range`);
+      change(botRange(id), BOT_RANGE_PROFILES[id]?.label ?? id);
+      toast(`Range ${BOT_RANGE_PROFILES[id]?.label} chargée`);
       return;
     }
     const r = saved.find((x) => x.id === loadId);
     if (!r) return;
     try {
-      onChange(parseRange(r.text));
-      toast(`Loaded "${r.name}"`);
+      change(parseRange(r.text), r.name);
+      toast(`« ${r.name} » chargée`);
     } catch {
-      toast('This saved range cannot be read');
+      toast('Cette range sauvegardée est illisible');
     }
   };
 
   const save = (): void => {
     const name = saveName.trim();
     if (!name) {
-      toast('Give the range a name first');
+      toast('Donne d’abord un nom à la range');
       return;
     }
     if (total === 0) {
-      toast('Nothing to save: the range is empty');
+      toast('Rien à sauvegarder : la range est vide');
       return;
     }
     setSaved(saveRange(name, rangeToString(range)));
     setSaveName('');
-    toast(`Saved "${name}"`);
+    toast(`« ${name} » sauvegardée`);
   };
 
   const remove = (): void => {
@@ -95,23 +103,25 @@ export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: Ran
     if (!r) return;
     setSaved(deleteSavedRange(r.id));
     setLoadId('');
-    toast(`Deleted "${r.name}"`);
+    toast(`« ${r.name} » supprimée`);
   };
 
   return (
     <div className="reditor" role="group" aria-label={label}>
+      {showStats && (
       <div className="reditor__stats num" aria-live="polite">
         <span>
-          {total} combos <span className="reditor__dim">· {rangePercent(range).toFixed(1)}% of hands</span>
+          {total} combos <span className="reditor__dim">· {rangePercent(range).toFixed(1).replace('.', ',')} % des mains</span>
         </span>
         {dead.length > 0 && (
           <span className="reditor__dim">
-            {available} / {total} possible with known cards
+            {available} / {total} possibles avec les cartes connues
           </span>
         )}
       </div>
+      )}
 
-      <Segmented label="Brush" value={brush} options={BRUSHES} onChange={setBrush} />
+      <Segmented label="Pinceau" value={brush} options={BRUSHES} onChange={setBrush} />
 
       <RangeMatrix
         range={range}
@@ -119,7 +129,7 @@ export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: Ran
         brush={brush}
         focused={focused?.label ?? null}
         onFocusCell={setFocused}
-        onPaint={(cells, w) => onChange(paintCells(range, cells.map((c) => c.handClass), w))}
+        onPaint={(cells, w) => change(paintCells(range, cells.map((c) => c.handClass), w))}
       />
 
       {live && (
@@ -127,19 +137,19 @@ export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: Ran
           cell={live}
           range={range}
           dead={dead}
-          onSetCell={(w) => onChange(setCellWeight(range, live.handClass, w))}
-          onSetCombo={(c: Combo, w) => onChange(setComboWeight(range, c, w))}
+          onSetCell={(w) => change(setCellWeight(range, live.handClass, w))}
+          onSetCombo={(c: Combo, w) => change(setComboWeight(range, c, w))}
         />
       )}
 
       <div className="reditor__quick">
-        <Button variant="ghost" onClick={() => onChange(emptyRange())}>Clear</Button>
-        <Button variant="ghost" onClick={() => onChange(fullRange())}>All</Button>
-        <Button variant="ghost" onClick={() => onChange(invertRange(range))}>Invert</Button>
+        <Button variant="ghost" onClick={() => change(emptyRange())}>Vider</Button>
+        <Button variant="ghost" onClick={() => change(fullRange())}>Tout</Button>
+        <Button variant="ghost" onClick={() => change(invertRange(range))}>Inverser</Button>
       </div>
 
       <div className="field">
-        <label className="label" htmlFor={`${label}-text`}>Range text</label>
+        <label className="label" htmlFor={`${label}-text`}>Texte de la range</label>
         <div className="reditor__text">
           <input
             id={`${label}-text`}
@@ -154,7 +164,7 @@ export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: Ran
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && apply()}
           />
-          <Button variant="secondary" onClick={apply}>Apply</Button>
+          <Button variant="secondary" onClick={apply}>Appliquer</Button>
         </div>
         {error && (
           <p id={`${label}-err`} className="reditor__error" role="alert">
@@ -164,11 +174,11 @@ export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: Ran
       </div>
 
       <div className="field">
-        <span className="label">Library</span>
+        <span className="label">Bibliothèque</span>
         <div className="reditor__text">
-          <select className="text-input" aria-label="Load a range" value={loadId} onChange={(e) => setLoadId(e.target.value)}>
-            <option value="">Load a range…</option>
-            <optgroup label="Bot profiles (preflop)">
+          <select className="text-input" aria-label="Charger une range" value={loadId} onChange={(e) => setLoadId(e.target.value)}>
+            <option value="">Charger une range…</option>
+            <optgroup label="Profils de bots (préflop)">
               {Object.values(BOT_RANGE_PROFILES).map((p) => (
                 <option key={p.id} value={`bot:${p.id}`}>
                   {p.label} · {botRangePercent(p.id).toFixed(0)}%
@@ -176,31 +186,31 @@ export function RangeEditor({ range, onChange, dead = [], label = 'Range' }: Ran
               ))}
             </optgroup>
             {saved.length > 0 && (
-              <optgroup label="My ranges">
+              <optgroup label="Mes ranges">
                 {saved.map((r) => (
                   <option key={r.id} value={r.id}>{r.name}</option>
                 ))}
               </optgroup>
             )}
           </select>
-          <Button variant="secondary" onClick={loadSelected} disabled={!loadId} aria-label="Load selected range">
+          <Button variant="secondary" onClick={loadSelected} disabled={!loadId} aria-label="Charger la range choisie">
             <FolderOpen size={18} />
           </Button>
-          <Button variant="ghost" onClick={remove} disabled={!saved.some((r) => r.id === loadId)} aria-label="Delete selected saved range">
+          <Button variant="ghost" onClick={remove} disabled={!saved.some((r) => r.id === loadId)} aria-label="Supprimer la range sauvegardée">
             <Trash2 size={18} />
           </Button>
         </div>
         <div className="reditor__text">
           <input
             className="text-input"
-            aria-label="Name to save this range under"
-            placeholder="Name this range"
+            aria-label="Nom de la range à sauvegarder"
+            placeholder="Nom de la range"
             maxLength={24}
             value={saveName}
             onChange={(e) => setSaveName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
           />
-          <Button variant="secondary" onClick={save} aria-label="Save range">
+          <Button variant="secondary" onClick={save} aria-label="Sauvegarder la range">
             <Save size={18} />
           </Button>
         </div>

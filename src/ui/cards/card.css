@@ -100,8 +100,8 @@ button.pcard {
 }
 
 .pcard--slot {
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.015);
+  border: 1px dashed var(--slot-line);
+  background: var(--slot-fill);
 }
 
 /* States */

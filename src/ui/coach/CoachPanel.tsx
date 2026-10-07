@@ -7,7 +7,7 @@ import { explainAnalysis, type ExplanationLevel } from '../../coach/explanation'
 import { BOT_RANGE_PROFILES, botRange } from '../../coach/ranges';
 import { loadCoachPrefs, saveCoachPrefs } from '../../storage';
 import { MiniCard } from '../cards/MiniCard';
-import { Badge, Segmented } from '../design-system';
+import { Badge, Button, Segmented } from '../design-system';
 import { Amount, useFormat } from '../format';
 import { ExplanationSection } from './ExplanationSection';
 import './coach.css';
@@ -19,6 +19,8 @@ export interface CoachPanelProps {
   heroSeat?: number;
   /** Seat -> bot profile id, used to build HYPOTHETICAL ranges when the user asks for them. */
   botProfiles: Record<number, string>;
+  /** Opens the Range Lab on the range assumed for an opponent, with the same cards. */
+  onEditRange?: (request: { profileId: string; hero: Card[]; board: Card[] }) => void;
 }
 
 type Mode = 'none' | 'profiles';
@@ -308,7 +310,7 @@ export function CoachView({ a }: { a: CoachAnalysis }) {
 }
 
 /** Coach analysis of the live hand, with an explicit choice of what to assume about the opponents. */
-export function CoachPanel({ game, visibleBoard, heroSeat = 0, botProfiles }: CoachPanelProps) {
+export function CoachPanel({ game, visibleBoard, heroSeat = 0, botProfiles, onEditRange }: CoachPanelProps) {
   const [mode, setMode] = useState<Mode>('none');
 
   const analysis = useMemo(() => {
@@ -329,6 +331,18 @@ export function CoachPanel({ game, visibleBoard, heroSeat = 0, botProfiles }: Co
     }
     return analyzeCoach(snap, assumptions);
   }, [game, visibleBoard, heroSeat, botProfiles, mode]);
+
+  // One line per distinct hypothetical range in use: "Adversaire : range TAG — hypothèse".
+  const rangeRows = useMemo(() => {
+    if (mode !== 'profiles' || game.handStatus !== 'inProgress') return [];
+    const snap = snapshotForCoach(game, heroSeat);
+    const seen = new Set<string>();
+    for (const o of snap.opponents) {
+      const id = botProfiles[o.seat];
+      if (id && BOT_RANGE_PROFILES[id]) seen.add(id);
+    }
+    return [...seen].map((id) => ({ id, label: BOT_RANGE_PROFILES[id]?.label ?? id, hero: snap.hero, board: visibleBoard.slice() }));
+  }, [mode, game, heroSeat, botProfiles, visibleBoard]);
 
   const { full } = useFormat();
   const [prefs, setPrefs] = useState(loadCoachPrefs);
@@ -353,6 +367,18 @@ export function CoachPanel({ game, visibleBoard, heroSeat = 0, botProfiles }: Co
           onChange={setMode}
         />
         {mode === 'profiles' && <p className="coach__note">Hypothèse : la range préflop de chaque bot, non mise à jour par ses actions.</p>}
+        {rangeRows.map((r) => (
+          <div key={r.id} className="coach__range">
+            <span>
+              Adversaire : range <strong>{r.label}</strong> — hypothèse
+            </span>
+            {onEditRange && (
+              <Button variant="secondary" onClick={() => onEditRange({ profileId: r.id, hero: r.hero, board: r.board })}>
+                Modifier la range
+              </Button>
+            )}
+          </div>
+        ))}
       </div>
       {analysis && explanation ? (
         <div className="coach-cols">
