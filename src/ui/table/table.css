@@ -29,7 +29,7 @@
   position: absolute;
   left: 50%;
   top: 58%;
-  z-index: 1;
+  z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -98,11 +98,14 @@
 
 .bet {
   position: absolute;
+  left: var(--x);
+  top: var(--y);
   z-index: 3;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 4px 10px 4px 8px;
+  white-space: nowrap;
   border-radius: var(--r-pill);
   background: var(--bet-bg);
   border: 1px solid var(--line);
@@ -124,6 +127,8 @@
 /* Seat --------------------------------------------------------------------- */
 .seat {
   position: absolute;
+  left: var(--x);
+  top: var(--y);
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -237,8 +242,10 @@
 
 .seat__foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 2px 6px;
   min-height: 16px;
   font-size: var(--fs-xs);
   font-weight: 700;
@@ -291,6 +298,19 @@
   opacity: 0.55;
 }
 
+.seat__bet {
+  display: none;
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: var(--bet-bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 /* Compact layout when the stage is short */
 @container (max-height: 330px) {
   .seat__cards:not([data-revealed]) {
@@ -299,11 +319,47 @@
   .stage__center {
     gap: 6px;
   }
+  .bet {
+    padding: 2px 8px;
+  }
+  .bet .chipstack__discs {
+    display: none;
+  }
   .pot {
     min-height: 36px;
   }
   .pot__value {
     font-size: var(--fs-lg);
+  }
+}
+
+/* Very short stage (the Coach panel is open on a small phone): there is no room for floating chips around the seats,
+   so each bet sits on its own seat instead. The hero's bet keeps its place, just below the board. */
+@container (max-height: 240px) {
+  .bet:not(.bet--hero):not(.bet--sweep) {
+    display: none;
+  }
+  .seat__bet {
+    display: inline-flex;
+    white-space: nowrap;
+  }
+  /* the chips already say what the player did: keep the foot on one line, "SB 100,5" */
+  .seat__foot:has(.seat__bet) {
+    flex-wrap: nowrap;
+  }
+  .seat__foot:has(.seat__bet) .seat__status,
+  .seat__bet .amount-unit {
+    display: none;
+  }
+  .bet--hero {
+    top: 91%;
+  }
+  .seat {
+    top: var(--yt, var(--y));
+  }
+  /* a smaller board leaves the side seats and their chips clear of the cards */
+  .stage__center {
+    --card-w: clamp(24px, 8.5cqw, 74px);
   }
 }
 

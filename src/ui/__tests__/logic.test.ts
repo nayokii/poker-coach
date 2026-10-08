@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { applyAction, getLegalActions, seededRng, startHand } from '../../engine';
 import { defaultAmount, sizePresets, snapAmount } from '../actions/betSizing';
@@ -83,19 +84,73 @@ describe('bet sizing presets (from engine state)', () => {
 });
 
 describe('table layout', () => {
-  it('places every seat inside the stage and bets between seat and center', () => {
+  const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+  const seatsOf = (bots: number) => Array.from({ length: bots + 1 }, (_, i) => seatSpec(bots, i));
+
+  it('places every seat inside the stage', () => {
     for (let bots = 1; bots <= 5; bots++) {
       for (let i = 1; i <= bots; i++) {
-        const { seat, bet } = seatSpec(bots, i);
+        const { seat } = seatSpec(bots, i);
         expect(seat.x).toBeGreaterThanOrEqual(10);
         expect(seat.x).toBeLessThanOrEqual(90);
         expect(seat.y).toBeGreaterThanOrEqual(0);
         expect(seat.y).toBeLessThan(70);
-        // the bet marker is closer to the center than the seat is
-        const d = (p: { x: number; y: number }) => Math.hypot(p.x - 50, (p.y - 50) * 0.6);
-        expect(d(bet)).toBeLessThan(d(seat));
       }
     }
+  });
+
+  it('keeps every bet next to its own seat, never nearer to another one', () => {
+    for (let bots = 1; bots <= 5; bots++) {
+      const all = seatsOf(bots);
+      all.forEach((me, i) => {
+        const mine = dist(me.bet, me.seat);
+        all.forEach((other, j) => {
+          if (j !== i) expect(dist(me.bet, other.seat), `${bots} bots, bet of seat ${i} vs seat ${j}`).toBeGreaterThan(mine);
+        });
+      });
+    }
+  });
+
+  it('keeps the bets out of the middle band where the pot and the board sit', () => {
+    // pot + board occupy roughly x 28..72, y 36..72 of the stage (measured at 320..1280 px, with and without the Coach panel)
+    const inBand = (p: { x: number; y: number }) => p.x > 28 && p.x < 72 && p.y > 36 && p.y < 72;
+    for (let bots = 1; bots <= 5; bots++) {
+      seatsOf(bots).forEach((s, i) => expect(inBand(s.bet), `${bots} bots, bet of seat ${i} at ${JSON.stringify(s.bet)}`).toBe(false));
+    }
+  });
+
+  it('never stacks two bets on top of each other', () => {
+    for (let bots = 1; bots <= 5; bots++) {
+      const all = seatsOf(bots);
+      for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) expect(dist(all[i]!.bet, all[j]!.bet), `${bots} bots, bets ${i}/${j}`).toBeGreaterThan(14);
+    }
+  });
+
+  it('paints the pot and the board above the bets, and the bets above the seats', () => {
+    const css = readFileSync('src/ui/table/table.css', 'utf8');
+    const rule = (selector: string): string => {
+      const start = css.indexOf(`\n${selector} {`);
+      return css.slice(start, css.indexOf('}', start));
+    };
+    const z = (selector: string): number => Number(/z-index:\s*(\d+)/.exec(rule(selector))?.[1] ?? NaN);
+    expect(z('.stage__center')).toBeGreaterThan(z('.bet'));
+    expect(z('.bet')).toBeGreaterThan(z('.seat'));
+    expect(rule('.bet')).toMatch(/white-space:\s*nowrap/);
+  });
+
+  it('on a very short stage the seats of one side keep their distance and the chips move onto their seats', () => {
+    for (let bots = 1; bots <= 5; bots++) {
+      const seats = seatsOf(bots).slice(1);
+      const y = (s: (typeof seats)[number]) => s.tightY ?? s.seat.y;
+      for (const side of [(x: number) => x < 35, (x: number) => x > 65]) {
+        const column = seats.filter((s) => side(s.seat.x)).sort((a, b) => y(a) - y(b));
+        for (let i = 1; i < column.length; i++) expect(y(column[i]!) - y(column[i - 1]!), `${bots} bots`).toBeGreaterThanOrEqual(30);
+      }
+    }
+    const css = readFileSync('src/ui/table/table.css', 'utf8');
+    const tight = css.slice(css.indexOf('@container (max-height: 240px)'));
+    expect(tight.slice(0, tight.indexOf('@container (max-width'))).toMatch(/\.bet:not\(\.bet--hero\):not\(\.bet--sweep\)\s*\{\s*display:\s*none/);
+    expect(tight).toMatch(/\.seat__bet\s*\{\s*display:\s*inline-flex/);
   });
 
   it('scales the chip stack with the bet size', () => {

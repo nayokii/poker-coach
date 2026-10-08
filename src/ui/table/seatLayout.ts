@@ -6,38 +6,40 @@ export interface Point {
 
 interface SeatSpec {
   seat: Point;
-  /** Where this seat's bet marker rests: between the seat and the pot, clear of both. */
+  /** Vertical position of the seat on a very short stage (Coach panel open on a small phone), when seats stacked on one side need more room. */
+  tightY?: number;
+  /** Where this seat's bet marker rests: next to its seat, outside the band the pot and the board occupy in the middle of the table. */
   bet: Point;
 }
 
 /** Bots are listed clockwise from the hero (bottom), i.e. left side first. */
 const BOT_SEATS: Record<number, SeatSpec[]> = {
-  1: [{ seat: { x: 50, y: 14 }, bet: { x: 50, y: 33 } }],
+  1: [{ seat: { x: 50, y: 14 }, bet: { x: 50, y: 30 } }],
   2: [
-    { seat: { x: 22, y: 28 }, bet: { x: 37, y: 43 } },
-    { seat: { x: 78, y: 28 }, bet: { x: 63, y: 43 } },
+    { seat: { x: 22, y: 28 }, bet: { x: 21, y: 43 } },
+    { seat: { x: 78, y: 28 }, bet: { x: 79, y: 43 } },
   ],
   3: [
-    { seat: { x: 16, y: 40 }, bet: { x: 37, y: 44 } },
-    { seat: { x: 50, y: 13 }, bet: { x: 50, y: 31 } },
-    { seat: { x: 84, y: 40 }, bet: { x: 63, y: 44 } },
+    { seat: { x: 16, y: 40 }, bet: { x: 12, y: 55 } },
+    { seat: { x: 50, y: 13 }, bet: { x: 50, y: 30 } },
+    { seat: { x: 84, y: 40 }, bet: { x: 88, y: 55 } },
   ],
   4: [
-    { seat: { x: 16, y: 50 }, bet: { x: 37, y: 46 } },
-    { seat: { x: 28, y: 18 }, bet: { x: 36, y: 34 } },
-    { seat: { x: 72, y: 18 }, bet: { x: 64, y: 34 } },
-    { seat: { x: 84, y: 50 }, bet: { x: 63, y: 46 } },
+    { seat: { x: 16, y: 50 }, bet: { x: 13, y: 75 } },
+    { seat: { x: 28, y: 18 }, bet: { x: 27, y: 33 } },
+    { seat: { x: 72, y: 18 }, bet: { x: 73, y: 33 } },
+    { seat: { x: 84, y: 50 }, bet: { x: 87, y: 75 } },
   ],
   5: [
-    { seat: { x: 16, y: 55 }, bet: { x: 37, y: 51 } },
-    { seat: { x: 17, y: 29 }, bet: { x: 35, y: 39 } },
-    { seat: { x: 50, y: 13 }, bet: { x: 50, y: 31 } },
-    { seat: { x: 83, y: 29 }, bet: { x: 65, y: 39 } },
-    { seat: { x: 84, y: 55 }, bet: { x: 63, y: 51 } },
+    { seat: { x: 16, y: 55 }, tightY: 60, bet: { x: 13, y: 76 } },
+    { seat: { x: 17, y: 29 }, tightY: 24, bet: { x: 17, y: 41 } },
+    { seat: { x: 50, y: 13 }, bet: { x: 50, y: 30 } },
+    { seat: { x: 83, y: 29 }, tightY: 24, bet: { x: 83, y: 41 } },
+    { seat: { x: 84, y: 55 }, tightY: 60, bet: { x: 87, y: 76 } },
   ],
 };
 
-const HERO: SeatSpec = { seat: { x: 50, y: 104 }, bet: { x: 50, y: 80 } };
+const HERO: SeatSpec = { seat: { x: 50, y: 104 }, bet: { x: 50, y: 85 } };
 
 /** Seat of player `index` (0 = hero, then bots clockwise) at a table with `botCount` bots. */
 export function seatSpec(botCount: number, index: number): SeatSpec {

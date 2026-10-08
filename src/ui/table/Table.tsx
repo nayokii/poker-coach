@@ -26,6 +26,9 @@ export interface TableProps {
 
 const at = (p: Point) => ({ left: `${p.x}%`, top: `${p.y}%` });
 
+/** A seat is placed by CSS variables so that a very short stage can move it (see `tightY`). */
+const seatStyle = (p: Point, tightY?: number) => ({ ['--x' as string]: `${p.x}%`, ['--y' as string]: `${p.y}%`, ...(tightY !== undefined ? { ['--yt' as string]: `${tightY}%` } : {}) });
+
 interface Ghost {
   id: number;
   from: Point;
@@ -98,14 +101,15 @@ export function Table({ game, board, potChips, showdown, thinking, lastActions, 
             gain={settled ? gains[i] : undefined}
             loser={settled && showdown && anyWinner && (gains[i] ?? 0) <= 0}
             highlight={highlight}
-            style={at(seatOf(i))}
+            bet={bets[i]}
+            style={seatStyle(seatOf(i), seatSpec(botCount, i).tightY)}
           />
         );
       })}
 
       {bets.map((bet, i) =>
         bet > 0 ? (
-          <div key={`bet-${i}-${bet}`} className="bet" style={at(betAt(i))}>
+          <div key={`bet-${i}-${bet}`} className={i === 0 ? 'bet bet--hero' : 'bet'} style={{ ['--x' as string]: `${betAt(i).x}%`, ['--y' as string]: `${betAt(i).y}%` }}>
             <ChipStack chips={bet} bigBlind={bb} showAmount={false} />
             <Amount chips={bet} className="bet__amount" />
           </div>

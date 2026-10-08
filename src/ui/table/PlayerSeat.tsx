@@ -26,11 +26,13 @@ export interface PlayerSeatProps {
   /** Showdown is settled and this player did not win. */
   loser?: boolean;
   highlight?: ReadonlySet<string>;
+  /** Chips this player has put in on the current street. Shown on the seat itself when the table is too short for floating chips. */
+  bet?: number;
   style?: CSSProperties;
 }
 
 export function PlayerSeat({
-  name, stack, position, isDealer, status, active, thinking, cards, revealed, lastAction, gain, loser, highlight, style,
+  name, stack, position, isDealer, status, active, thinking, cards, revealed, lastAction, gain, loser, highlight, bet, style,
 }: PlayerSeatProps) {
   const folded = status === 'folded';
   const showCards = !!cards && cards.length === 2 && status !== 'out' && !folded;
@@ -82,6 +84,11 @@ export function PlayerSeat({
         {statusText && !winner && (
           <span className="seat__status" data-kind={folded ? 'fold' : status === 'allin' ? 'allin' : 'act'}>
             {statusText}
+          </span>
+        )}
+        {(bet ?? 0) > 0 && !winner && (
+          <span className="seat__bet num">
+            <Amount chips={bet ?? 0} />
           </span>
         )}
         {winner && (

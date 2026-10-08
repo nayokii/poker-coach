@@ -222,6 +222,16 @@ describe('Table', () => {
     expect(screen.getAllByRole('group').length).toBe(2); // two bot seats
   });
 
+  it('gives every bet to its seat too, for tables too short for floating chips', () => {
+    const g = three();
+    const { container } = render(<FormatProvider bigBlind={20} mode="bb"><Table {...tableProps(g)} /></FormatProvider>);
+    const chips = [...container.querySelectorAll('.seat .seat__bet')].map((c) => c.textContent);
+    expect(chips).toHaveLength(2); // the blinds belong to the two bots
+    expect(chips.join(' ')).toMatch(/0\.5/);
+    expect(chips.join(' ')).toMatch(/1/);
+    expect(container.querySelectorAll('.bet--hero')).toHaveLength(0); // the hero has not bet
+  });
+
   it('follows the street: 3, 4 then 5 board cards', () => {
     let g = three();
     const counts: number[] = [];
