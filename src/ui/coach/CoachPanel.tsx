@@ -1,33 +1,11 @@
-import { useMemo, useState } from 'react';
-import { CATEGORY_NAMES, type Card, type GameState, type Street } from '../../engine';
-import {
-  analyzeCoach, snapshotForCoach, type CoachAnalysis, type CoachAssumptions, type ConfidenceReasonCode, type DrawInfo, type OpponentAssumption,
-} from '../../coach/analysis';
-import { explainAnalysis, type ExplanationLevel } from '../../coach/explanation';
-import { BOT_RANGE_PROFILES, botRange } from '../../coach/ranges';
-import { loadCoachPrefs, saveCoachPrefs } from '../../storage';
+import { CATEGORY_NAMES, type Card } from '../../engine';
+import type { CoachAnalysis, ConfidenceReasonCode, DrawInfo } from '../../coach/analysis';
 import { MiniCard } from '../cards/MiniCard';
-import { Badge, Button, Segmented } from '../design-system';
+import { Badge } from '../design-system';
 import { Amount, useFormat } from '../format';
-import { ExplanationSection } from './ExplanationSection';
 import './coach.css';
 
-export interface CoachPanelProps {
-  game: GameState;
-  /** Board cards currently visible to the player (the engine may be ahead during a run-out). */
-  visibleBoard: Card[];
-  heroSeat?: number;
-  /** Seat -> bot profile id, used to build HYPOTHETICAL ranges when the user asks for them. */
-  botProfiles: Record<number, string>;
-  /** Opens the Range Lab on the range assumed for an opponent, with the same cards. */
-  onEditRange?: (request: { profileId: string; hero: Card[]; board: Card[] }) => void;
-}
-
-type Mode = 'none' | 'profiles';
-
 const pct = (x: number, digits = 1): string => `${(x * 100).toFixed(digits)}%`;
-
-const streetOf = (n: number): Street => (n === 0 ? 'preflop' : n === 3 ? 'flop' : n === 4 ? 'turn' : 'river');
 
 const REASON_TEXT: Record<ConfidenceReasonCode, string> = {
   ALL_OPPONENTS_EXACT_OR_KNOWN_RANGE: 'Every opponent hand or range is known',
@@ -95,7 +73,7 @@ function Tile({ label, value, sub }: { label: string; value: React.ReactNode; su
 }
 
 /** Read-only view of a CoachAnalysis: structured data, no advice and no free text generated here. */
-export function CoachView({ a }: { a: CoachAnalysis }) {
+export function CoachView({ a, blind = false }: { a: CoachAnalysis; blind?: boolean }) {
   const { fmt, full, unit } = useFormat();
   const s = a.situation;
   const sprText = 'status' in a.spr ? '—' : a.spr.spr === Infinity ? '∞' : a.spr.spr.toFixed(1);
@@ -244,7 +222,9 @@ export function CoachView({ a }: { a: CoachAnalysis }) {
             <p className="cc__line num dim">
               Call {fmt(a.potOdds.odds.callAmount)}{unit && ` ${unit}`} into {fmt(a.potOdds.odds.potBeforeCall)}{unit && ` ${unit}`} · {a.potOdds.odds.ratio.toFixed(1)} to 1
             </p>
-            {a.potOdds.comparison ? (
+            {blind ? (
+              <p className="cc__line dim">Comparaison masquée jusqu’au verdict.</p>
+            ) : a.potOdds.comparison ? (
               <p className="cc__line num" data-ok={a.potOdds.comparison.meetsRequirement || undefined}>
                 Equity {pct(a.potOdds.comparison.equity)} vs {pct(a.potOdds.comparison.requiredEquity)} needed ·{' '}
                 <strong>{a.potOdds.comparison.margin >= 0 ? '+' : '−'}{pct(Math.abs(a.potOdds.comparison.margin))}</strong>
@@ -264,7 +244,9 @@ export function CoachView({ a }: { a: CoachAnalysis }) {
       </Card_>
 
       <Card_ title="Expected value">
-        {a.ev.status === 'complete' ? (
+        {blind ? (
+          <p className="cc__line dim">Masquée jusqu’au verdict.</p>
+        ) : a.ev.status === 'complete' ? (
           <>
             <p className="cc__big num">{a.ev.ev >= 0 ? '+' : '−'}<Amount chips={Math.abs(a.ev.ev)} /></p>
             <p className="cc__line dim">EV of {a.ev.kind === 'call' ? 'calling' : 'betting'}, relative to folding</p>
@@ -304,95 +286,6 @@ export function CoachView({ a }: { a: CoachAnalysis }) {
           <summary>Assumptions used</summary>
           <ul>{a.assumptionsUsed.map((x) => <li key={x}>{x}</li>)}</ul>
         </details>
-      )}
-    </div>
-  );
-}
-
-/** Coach analysis of the live hand, with an explicit choice of what to assume about the opponents. */
-export function CoachPanel({ game, visibleBoard, heroSeat = 0, botProfiles, onEditRange }: CoachPanelProps) {
-  const [mode, setMode] = useState<Mode>('none');
-
-  const analysis = useMemo(() => {
-    if (game.handStatus !== 'inProgress') return null;
-    const base = snapshotForCoach(game, heroSeat);
-    const snap = { ...base, board: visibleBoard.slice(), street: streetOf(visibleBoard.length) };
-    const assumptions: CoachAssumptions = { equity: { seed: 1 } };
-    if (mode === 'profiles') {
-      const opponents: Record<number, OpponentAssumption> = {};
-      for (const o of snap.opponents) {
-        const id = botProfiles[o.seat];
-        if (!id || !BOT_RANGE_PROFILES[id]) continue;
-        opponents[o.seat] = {
-          kind: 'range', range: botRange(id), certainty: 'hypothetical', source: 'bot-profile', label: `${BOT_RANGE_PROFILES[id].label} preflop range`,
-        };
-      }
-      assumptions.opponents = opponents;
-    }
-    return analyzeCoach(snap, assumptions);
-  }, [game, visibleBoard, heroSeat, botProfiles, mode]);
-
-  // One line per distinct hypothetical range in use: "Adversaire : range TAG — hypothèse".
-  const rangeRows = useMemo(() => {
-    if (mode !== 'profiles' || game.handStatus !== 'inProgress') return [];
-    const snap = snapshotForCoach(game, heroSeat);
-    const seen = new Set<string>();
-    for (const o of snap.opponents) {
-      const id = botProfiles[o.seat];
-      if (id && BOT_RANGE_PROFILES[id]) seen.add(id);
-    }
-    return [...seen].map((id) => ({ id, label: BOT_RANGE_PROFILES[id]?.label ?? id, hero: snap.hero, board: visibleBoard.slice() }));
-  }, [mode, game, heroSeat, botProfiles, visibleBoard]);
-
-  const { full } = useFormat();
-  const [prefs, setPrefs] = useState(loadCoachPrefs);
-  const update = (next: Partial<typeof prefs>): void => {
-    const merged = { ...prefs, ...next };
-    setPrefs(merged);
-    saveCoachPrefs(merged);
-  };
-  const explanation = useMemo(() => (analysis ? explainAnalysis(analysis, { formatAmount: (c) => full(c).replace('.', ',') }) : null), [analysis, full]);
-
-  return (
-    <div className="coach-panel">
-      <div className="field">
-        <span className="label">Les adversaires sont supposés avoir</span>
-        <Segmented
-          label="Opponent assumption"
-          value={mode}
-          options={[
-            { value: 'none', label: 'Rien' },
-            { value: 'profiles', label: 'Leur range de profil' },
-          ]}
-          onChange={setMode}
-        />
-        {mode === 'profiles' && <p className="coach__note">Hypothèse : la range préflop de chaque bot, non mise à jour par ses actions.</p>}
-        {rangeRows.map((r) => (
-          <div key={r.id} className="coach__range">
-            <span>
-              Adversaire : range <strong>{r.label}</strong> — hypothèse
-            </span>
-            {onEditRange && (
-              <Button variant="secondary" onClick={() => onEditRange({ profileId: r.id, hero: r.hero, board: r.board })}>
-                Modifier la range
-              </Button>
-            )}
-          </div>
-        ))}
-      </div>
-      {analysis && explanation ? (
-        <div className="coach-cols">
-          <ExplanationSection
-            explanation={explanation}
-            level={prefs.level}
-            onLevel={(l: ExplanationLevel) => update({ level: l })}
-            showSources={prefs.showSources}
-            onShowSources={(v) => update({ showSources: v })}
-          />
-          <CoachView a={analysis} />
-        </div>
-      ) : (
-        <p className="cc__line dim">L’analyse est disponible pendant une main en cours.</p>
       )}
     </div>
   );

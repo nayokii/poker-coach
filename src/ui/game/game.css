@@ -353,3 +353,20 @@
 .game__aside-body {
   min-height: 0;
 }
+
+/* With the Coach bar under it, the dock leaves the bottom safe area to the bar. */
+.game__main:has(.live) .dock {
+  padding-bottom: var(--s-3);
+  min-height: calc(64px + var(--s-3) * 2);
+}
+
+/* Coach open under the table: the hero panel and the dock tighten so the table keeps its room. */
+.game[data-coach] .hero {
+  --card-w: clamp(40px, min(12vw, 8dvh), 60px);
+  padding: var(--s-2) var(--s-3);
+}
+.game[data-coach] .dock {
+  padding-top: var(--s-2);
+  padding-bottom: var(--s-2);
+  min-height: 0;
+}

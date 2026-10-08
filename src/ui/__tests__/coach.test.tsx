@@ -6,7 +6,8 @@ import { analyzeGameState } from '../../coach/analysis';
 import { parseRange } from '../../coach/math';
 import type { GameState } from '../../engine';
 import { App } from '../app/App';
-import { CoachPanel, CoachView } from '../coach/CoachPanel';
+import { CoachView } from '../coach/CoachPanel';
+import { CoachLive } from '../coach/CoachLive';
 import { FormatProvider } from '../format';
 import { newGame, play, rigged } from '../../engine/__tests__/helpers';
 
@@ -18,6 +19,8 @@ const flop = (hero: string, v1: string, v2: string, board: string): GameState =>
 
 const wrap = (ui: React.ReactNode) => <FormatProvider bigBlind={20} mode="bb">{ui}</FormatProvider>;
 const profiles = { 1: 'tag', 2: 'lag' };
+/** The structured data cards sit behind the Approfondi / Avancé levels. */
+const atLevel = (level: 1 | 2 | 3) => localStorage.setItem('poker-coach:coach-prefs:v1', JSON.stringify({ level, showSources: false }));
 
 describe('CoachView renders structured data without inventing anything', () => {
   it('unknown opponents: no equity number, an explicit message, low confidence, EV insufficient', () => {
@@ -121,19 +124,21 @@ describe('CoachView renders structured data without inventing anything', () => {
   });
 });
 
-describe('CoachPanel: the user chooses what to assume', () => {
+describe('CoachLive: the user chooses what to assume', () => {
   it('defaults to no assumption (no equity), and a profile hypothesis computes one clearly labelled', async () => {
     const user = userEvent.setup();
+    atLevel(2);
     const g = flop('As Ks', '7c 2d', '8c 3d', 'Jh 8h 4c');
-    render(wrap(<CoachPanel game={g} visibleBoard={g.board} botProfiles={profiles} />));
+    render(wrap(<CoachLive variant="aside" game={g} visibleBoard={g.board} botProfiles={profiles} />));
     expect(screen.getByText('Opponent range unknown')).toBeInTheDocument();
+    expect(screen.getByText(/Range adverse :/)).toHaveTextContent('Range adverse : inconnue');
 
-    await user.click(screen.getByRole('radio', { name: 'Leur range de profil' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter une hypothèse' }));
     const eq = await screen.findByRole('region', { name: 'Equity' });
     expect(eq).toHaveTextContent(/\d+\.\d%/);
     expect(eq).toHaveTextContent('hypothetical · TAG preflop range');
     expect(eq).toHaveTextContent('hypothetical · LAG preflop range');
-    expect(screen.getByText(/Hypothèse : la range préflop de chaque bot/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Range adverse :/)[0]).toHaveTextContent('Range adverse : TAG · hypothèse');
     expect(screen.getByText('medium')).toBeInTheDocument();
   });
 
@@ -142,7 +147,8 @@ describe('CoachPanel: the user chooses what to assume', () => {
     const full = { ...g, board: g.board };
     // pretend the engine already dealt turn and river while the screen still shows the flop
     const ahead: GameState = { ...full, board: [...g.board, ...g.deck.slice(0, 2)] };
-    render(wrap(<CoachPanel game={ahead} visibleBoard={g.board} botProfiles={profiles} />));
+    atLevel(2);
+    render(wrap(<CoachLive variant="aside" game={ahead} visibleBoard={g.board} botProfiles={profiles} />));
     expect(screen.getByRole('region', { name: 'Situation' })).toHaveTextContent('flop');
     expect(screen.getByRole('region', { name: 'Outs' })).toHaveTextContent('47 unknown cards');
   });
@@ -150,7 +156,7 @@ describe('CoachPanel: the user chooses what to assume', () => {
   it('says analysis needs a hand in progress once the hand is over', () => {
     let g = rigged(mk(), ['As Ks', '7c 2d', '8c 3d'], '2h 9h Jc 4s 5s');
     g = play(g, ['raise', 60], ['fold'], ['fold']);
-    render(wrap(<CoachPanel game={g} visibleBoard={[]} botProfiles={profiles} />));
+    render(wrap(<CoachLive variant="aside" game={g} visibleBoard={[]} botProfiles={profiles} />));
     expect(screen.getByText('L’analyse est disponible pendant une main en cours.')).toBeInTheDocument();
   });
 });
@@ -168,25 +174,28 @@ describe('Coach and Range Lab inside the app', () => {
     expect(screen.getByRole('heading', { name: /poker coach/i })).toBeVisible();
   });
 
-  it('during a hand the coach opens from the header and from the menu, without the tab bar stealing room', async () => {
+  it('during a hand the Coach is on the game screen, and also opens from the menu, without the tab bar stealing room', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: /deal me in/i }));
     await screen.findByRole('region', { name: /your hand/i });
     expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
 
-    await user.click(screen.getByRole('button', { name: 'Coach analysis' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Coach' });
-    expect(within(dialog).getByRole('region', { name: 'Situation' })).toBeInTheDocument();
-    expect(within(dialog).getByText('Opponent range unknown')).toBeInTheDocument();
+    // the Coach is part of the screen: a slim bar under the table, no menu to dig through
+    const bar = within(screen.getByRole('region', { name: 'Coach' })).getByRole('button');
+    expect(bar).toHaveAttribute('aria-expanded', 'false');
+    await user.click(bar);
+    const panel = await screen.findByRole('region', { name: 'Coach' });
+    expect(within(panel).getByRole('region', { name: 'Analyse' })).toBeInTheDocument();
+    expect(within(panel).getByText(/Range adverse :/)).toHaveTextContent('inconnue');
     await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog', { name: 'Coach' })).toBeNull();
+    expect(within(screen.getByRole('region', { name: 'Coach' })).getByRole('button')).toHaveAttribute('aria-expanded', 'false');
 
     await user.click(screen.getByRole('button', { name: 'Menu' }));
     const menu = screen.getByRole('dialog', { name: 'Menu' });
     expect(within(menu).getByText('Range Lab')).toBeInTheDocument();
     await user.click(within(menu).getByText('Coach analysis'));
-    expect(await screen.findByRole('dialog', { name: 'Coach' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Fermer le Coach' })).toBeInTheDocument();
   });
 
   it('the Range Lab can be reached from the game menu and the table is still there when coming back', async () => {

@@ -9,7 +9,7 @@ import { botRange, buildMatrix, cellSelection, emptyRange, rangePercent, summari
 import { newGame, play, rigged } from '../../engine/__tests__/helpers';
 import { DEFAULT_SETTINGS, THEME_KEY, loadRangeIntroSeen, loadThemePref, resolveTheme, sanitizeThemePref } from '../../storage';
 import { SettingsModal } from '../app/SettingsModal';
-import { CoachPanel } from '../coach/CoachPanel';
+import { CoachLive } from '../coach/CoachLive';
 import { ToastProvider } from '../design-system';
 import { FormatProvider } from '../format';
 import { RangeLab } from '../ranges/RangeLab';
@@ -305,19 +305,20 @@ describe('Coach ↔ Range Lab', () => {
   const flop = () => play(rigged(mk(), ['As Ks', '7c 2d', '8c 3d'], 'Jh 8h 4c 4s 5s'), ['call'], ['call'], ['check']);
   const wrap = (ui: React.ReactNode) => <FormatProvider bigBlind={20} mode="bb">{ui}</FormatProvider>;
 
-  it('names the assumed range as a hypothesis and offers "Modifier la range" with the right context', async () => {
+  it('names the assumed range as a hypothesis and offers "Modifier" with the right context', async () => {
     const user = userEvent.setup();
     const g = flop();
     const onEditRange = vi.fn();
-    render(wrap(<CoachPanel game={g} visibleBoard={g.board} botProfiles={{ 1: 'tag', 2: 'tag' }} onEditRange={onEditRange} />));
-    expect(screen.queryByRole('button', { name: 'Modifier la range' })).toBeNull(); // nothing assumed, nothing to edit
-    await user.click(screen.getByRole('radio', { name: 'Leur range de profil' }));
-    expect(screen.getByText(/Adversaire : range/)).toHaveTextContent('Adversaire : range TAG — hypothèse');
-    await user.click(screen.getByRole('button', { name: 'Modifier la range' }));
-    expect(onEditRange).toHaveBeenCalledTimes(1);
-    const req = onEditRange.mock.calls[0]![0];
+    render(wrap(<CoachLive variant="aside" game={g} visibleBoard={g.board} botProfiles={{ 1: 'tag', 2: 'tag' }} onEditRange={onEditRange} />));
+    expect(screen.queryByRole('button', { name: 'Modifier' })).toBeNull(); // nothing assumed, nothing to edit
+    await user.click(screen.getByRole('button', { name: 'Ajouter une hypothèse' }));
+    expect(onEditRange).toHaveBeenCalledTimes(1); // the existing Range Lab flow opens
+    expect(screen.getByText(/Range adverse :/)).toHaveTextContent('Range adverse : TAG · hypothèse');
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    expect(onEditRange).toHaveBeenCalledTimes(2);
+    const req = onEditRange.mock.calls[1]![0];
     expect(req.profileId).toBe('tag');
-    expect(req.hero.map(String).length).toBe(2);
+    expect(req.hero).toHaveLength(2);
     expect(req.board).toHaveLength(3);
   });
 

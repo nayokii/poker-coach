@@ -111,6 +111,10 @@ It verifies `vercel.json`, `.gitignore`, `dist/index.html`, the manifest and its
 - **Range Lab**: a one-time introduction (`poker-coach:range-intro:v1`), an optional "Comprendre les ranges" guide, a "Range actuelle" summary (numbers come from the Range Engine), plain-language explanation of each cell, and a "Modifier la range" button in the Coach that opens the Range Lab on the assumed range. A range is always shown as a hypothesis.
 - `npm run check` runs the type check and the Vercel readiness check.
 
+## Live Coach
+
+The Coach sits on the game screen. On phones and tablets it is a slim bar under the table that opens a panel in the page flow (the table, your cards and the action buttons stay visible and playable); close it with the chevron, Escape or a swipe down. On wide screens (>= 1180 px) it is the side panel. It only reads the existing snapshot / CoachAnalysis / Explanation Engine, recomputed from the current game state. The verdict ("Afficher mon verdict") stays hidden until asked and is hidden again at each new decision point. The levels are the existing Simple / Approfondi / Avancé; the opponent range is shown as a hypothesis and "Modifier" opens the Range Lab.
+
 ## Architecture
 
 | Folder | Role | Depends on |

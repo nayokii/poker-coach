@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
-import type { Card, PlayerAction } from '../../engine';
+import { useEffect, useMemo, useState } from 'react';
+import type { PlayerAction } from '../../engine';
 import type { SavedSession, Settings } from '../../storage';
 import { ActionBar } from '../actions/ActionBar';
 import { FormatProvider } from '../format';
 import { Modal, Panel, Segmented } from '../design-system';
-import { CoachPanel } from '../coach/CoachPanel';
+import { CoachLive, type RangeRequest } from '../coach/CoachLive';
 import { useMediaQuery } from '../useMediaQuery';
 import { Table } from '../table/Table';
 import { Header } from '../app/Header';
@@ -25,8 +25,8 @@ export interface GameScreenProps {
   onCloseLog: () => void;
   coachOpen?: boolean;
   onCloseCoach?: () => void;
-  /** "Modifier la range" in the Coach: open the Range Lab with that range and these cards. */
-  onEditRange?: (request: { profileId: string; hero: Card[]; board: Card[] }) => void;
+  /** "Modifier" in the Coach: open the Range Lab with that range and these cards. */
+  onEditRange?: (request: RangeRequest) => void;
   /** Test hooks. */
   seed?: number;
   paceScale?: number;
@@ -38,17 +38,20 @@ export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, o
   const { game } = s;
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [sizing, setSizing] = useState(false);
-  const [localCoach, setLocalCoach] = useState(false);
+  const [coachSheet, setCoachOpen] = useState(false);
   const [asideTab, setAsideTab] = useState<'coach' | 'log'>('coach');
   const wide = useMediaQuery('(min-width: 1180px)');
-  const openCoach = (): void => (wide ? setAsideTab('coach') : setLocalCoach(true));
-  const closeCoach = (): void => {
-    setLocalCoach(false);
+  // The menu asks for the Coach: it opens the panel under the table, then lets go of the request.
+  useEffect(() => {
+    if (!coachOpen) return;
+    if (wide) setAsideTab('coach');
+    else setCoachOpen(true);
     onCloseCoach?.();
-  };
+  }, [coachOpen, wide, onCloseCoach]);
+  const toggleCoach = (): void => (wide ? setAsideTab('coach') : setCoachOpen((v) => !v));
   const editRange: GameScreenProps['onEditRange'] = onEditRange
     ? (req) => {
-        closeCoach();
+        setCoachOpen(false);
         onEditRange(req);
       }
     : undefined;
@@ -71,12 +74,12 @@ export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, o
 
   return (
     <FormatProvider bigBlind={game.config.bigBlind} mode={settings.unit}>
-      <div className="game" data-phase={s.phase} data-street={game.street} data-sizing={sizing || undefined}>
+      <div className="game" data-phase={s.phase} data-street={game.street} data-sizing={sizing || undefined} data-coach={(!wide && coachSheet) || undefined}>
         <Header
           blinds={`${game.config.smallBlind} / ${game.config.bigBlind}`}
           handNumber={game.handNumber}
           onMenu={onOpenMenu}
-          onCoach={openCoach}
+          onCoach={toggleCoach}
         />
         <div className="game__body">
           <div className="game__main">
@@ -118,6 +121,10 @@ export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, o
                 <ActionBar state={game} legal={s.heroLegal} waiting={waiting} onAction={onAction} onSizingChange={setSizing} />
               )}
             </div>
+
+            {!wide && (
+              <CoachLive variant="sheet" open={coachSheet} onOpenChange={setCoachOpen} game={game} visibleBoard={s.board} botProfiles={s.botProfiles} onEditRange={editRange} />
+            )}
           </div>
 
           {wide && (
@@ -133,7 +140,7 @@ export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, o
               />
               <div className="game__aside-body">
                 {asideTab === 'coach' ? (
-                  <CoachPanel game={game} visibleBoard={s.board} botProfiles={s.botProfiles} onEditRange={editRange} />
+                  <CoachLive variant="aside" game={game} visibleBoard={s.board} botProfiles={s.botProfiles} onEditRange={editRange} />
                 ) : (
                   <Panel>
                     <HandLog game={game} />
@@ -147,11 +154,6 @@ export function GameScreen({ settings, resume, onNewGame, onOpenMenu, logOpen, o
         {logOpen && (
           <Modal title={`Hand ${game.handNumber}`} onClose={onCloseLog}>
             <HandLog game={game} />
-          </Modal>
-        )}
-        {(coachOpen || localCoach) && !wide && (
-          <Modal title="Coach" onClose={closeCoach}>
-            <CoachPanel game={game} visibleBoard={s.board} botProfiles={s.botProfiles} onEditRange={editRange} />
           </Modal>
         )}
         {summaryOpen && (

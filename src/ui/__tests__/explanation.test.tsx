@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { GameState } from '../../engine';
 import { newGame, play, rigged } from '../../engine/__tests__/helpers';
-import { CoachPanel } from '../coach/CoachPanel';
+import { CoachLive } from '../coach/CoachLive';
 import { FormatProvider } from '../format';
 
 beforeEach(() => localStorage.clear());
@@ -18,21 +18,26 @@ const norm = (s: string | null) => (s ?? '').replace(/[  ]/g, ' ');
 function renderPanel(game: GameState) {
   return render(
     <FormatProvider bigBlind={20} mode="bb">
-      <CoachPanel game={game} visibleBoard={game.board} botProfiles={profiles} />
+      <CoachLive variant="aside" game={game} visibleBoard={game.board} botProfiles={profiles} />
     </FormatProvider>,
   );
 }
-const why = () => screen.getByRole('region', { name: 'Pourquoi ?' });
+const why = () => screen.getByRole('region', { name: 'Analyse' });
+const reveal = async (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole('button', { name: 'Afficher mon verdict' }));
 const items = () => why().querySelectorAll('.why__item');
 const texts = () => [...items()].map((i) => i.querySelector('.why__text')!.textContent);
 
 describe('Pourquoi ? — three levels in the Coach panel', () => {
-  it('starts at the Simple level with a short list; without a range the verdict is undetermined', () => {
+  it('starts at the Simple level with a short list; the verdict stays hidden until asked, and is undetermined without a range', async () => {
+    const user = userEvent.setup();
     renderPanel(facing());
     expect(within(why()).getAllByRole('radio').map((r) => r.textContent)).toEqual(['Simple', 'Approfondi', 'Avancé']);
     expect(within(why()).getByRole('radio', { name: 'Simple' })).toHaveAttribute('aria-checked', 'true');
     expect(items().length).toBeGreaterThan(3);
     expect(items().length).toBeLessThanOrEqual(12);
+    expect(why()).not.toHaveTextContent('Impossible de conclure précisément');
+    expect(within(why()).queryByLabelText(/^Verdict/)).toBeNull();
+    await reveal(user);
     expect(why()).toHaveTextContent('Impossible de conclure précisément sans hypothèse sur la range adverse.');
     expect(within(why()).getByLabelText('Verdict : Indéterminé')).toBeInTheDocument();
     expect(why()).toHaveTextContent('Ton equity est inconnue');
@@ -68,8 +73,9 @@ describe('Pourquoi ? — three levels in the Coach panel', () => {
   it('with a hypothetical range the wording changes, the hypothesis is stated and a verdict appears', async () => {
     const user = userEvent.setup();
     renderPanel(facing());
-    await user.click(screen.getByRole('radio', { name: 'Leur range de profil' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter une hypothèse' }));
     expect(await within(why()).findByText(/Si on suppose ces ranges, ton equity est de/)).toBeInTheDocument();
+    await reveal(user);
     expect(why()).toHaveTextContent('hypothèse, pas une observation');
     expect(why()).toHaveTextContent('Confiance de l’analyse : moyenne.');
     expect(['Favorable', 'Défavorable', 'Proche']).toContain(why().querySelector('.badge')!.textContent);
@@ -80,10 +86,11 @@ describe('Pourquoi ? — three levels in the Coach panel', () => {
   it('the equity written in the explanation is the one in the data card (the explanation only reads the analysis)', async () => {
     const user = userEvent.setup();
     renderPanel(facing());
-    await user.click(screen.getByRole('radio', { name: 'Leur range de profil' }));
+    await user.click(screen.getByRole('button', { name: 'Ajouter une hypothèse' }));
+    await user.click(within(why()).getByRole('radio', { name: 'Approfondi' }));
     const sentence = norm((await within(why()).findByText(/ton equity est de/)).textContent);
     const printed = /ton equity est de (\d+,\d) %/.exec(sentence)![1]!.replace(',', '.');
-    expect(norm(screen.getByRole('region', { name: 'Equity' }).textContent)).toContain(`${printed}%`);
+    expect(norm((await screen.findByRole('region', { name: 'Equity' })).textContent)).toContain(`${printed}%`);
   });
 
   it('shows the source of each sentence on demand', async () => {
@@ -107,6 +114,6 @@ describe('Pourquoi ? — three levels in the Coach panel', () => {
     const over = play(rigged(mk(), ['As Ks', '7c 2d', '8c 3d'], '2h 9h Jc 4s 5s'), ['raise', 60], ['fold'], ['fold']);
     renderPanel(over);
     expect(screen.getByText('L’analyse est disponible pendant une main en cours.')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Pourquoi ?' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Analyse' })).toBeNull();
   });
 });

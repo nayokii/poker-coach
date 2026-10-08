@@ -1,5 +1,5 @@
 import { itemsForLevel, type DecisionVerdict, type Explanation, type ExplanationCategory, type ExplanationLevel } from '../../coach/explanation';
-import { Badge, Segmented } from '../design-system';
+import { Badge, Button, Segmented } from '../design-system';
 import './coach.css';
 
 const LEVELS: { value: ExplanationLevel; label: string }[] = [
@@ -51,38 +51,84 @@ export interface ExplanationSectionProps {
   onLevel: (l: ExplanationLevel) => void;
   showSources: boolean;
   onShowSources: (v: boolean) => void;
+  /** Live coach: the decision sentences and the verdict badge stay hidden until the player asks. */
+  verdictHidden?: boolean;
+  onRevealVerdict?: () => void;
+  /** Live coach: "Ta situation" (what is on the table) apart from "Pourquoi ?" (what it means). */
+  grouped?: boolean;
 }
 
+const FACTS: ExplanationCategory[] = ['situation', 'made_hand', 'draw', 'outs', 'equity', 'range'];
+
 /** "Pourquoi ?": the explanation at the chosen depth. The level only changes how much is shown, never any number. */
-export function ExplanationSection({ explanation, level, onLevel, showSources, onShowSources }: ExplanationSectionProps) {
-  const items = itemsForLevel(explanation, level);
+export function ExplanationSection({ explanation, level, onLevel, showSources, onShowSources, verdictHidden = false, onRevealVerdict, grouped = false }: ExplanationSectionProps) {
+  const all = itemsForLevel(explanation, level);
+  const items = verdictHidden ? all.filter((i) => i.category !== 'decision') : all;
   const v = explanation.verdict.verdict;
+  const canReveal = verdictHidden && all.length !== items.length;
+
+  const list = (rows: typeof items, label?: string) => (
+    <ol className="why__list" aria-live="polite" aria-label={label}>
+      {rows.map((i) => (
+        <li key={i.id} className="why__item" data-tone={i.tone} data-category={i.category} data-level={i.level}>
+          <span className="why__cat">{CATEGORY_FR[i.category]}</span>
+          <span className="why__text">{i.text}</span>
+          {showSources && (
+            <span className="why__src" aria-label="Sources">
+              {i.sources.join(' · ')}
+            </span>
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+  const facts = items.filter((i) => FACTS.includes(i.category));
+  const reasons = items.filter((i) => !FACTS.includes(i.category));
 
   return (
-    <section className="why" aria-label="Pourquoi ?">
-      <header className="why__head">
-        <h3 className="why__title">Pourquoi ?</h3>
-        <Badge tone={VERDICT_TONE[v]} aria-label={`Verdict : ${VERDICT_FR[v]}`}>
-          {VERDICT_FR[v]}
-        </Badge>
-      </header>
-
+    <section className="why" aria-label={grouped ? 'Analyse' : 'Pourquoi ?'}>
       <Segmented label="Niveau d’explication" value={level} options={LEVELS} onChange={onLevel} />
       <p className="why__hint">{LEVEL_HINT[level]}</p>
 
-      <ol className="why__list" aria-live="polite">
-        {items.map((i) => (
-          <li key={i.id} className="why__item" data-tone={i.tone} data-category={i.category} data-level={i.level}>
-            <span className="why__cat">{CATEGORY_FR[i.category]}</span>
-            <span className="why__text">{i.text}</span>
-            {showSources && (
-              <span className="why__src" aria-label="Sources">
-                {i.sources.join(' · ')}
-              </span>
+      {grouped ? (
+        <>
+          {list(facts, 'Ta situation')}
+          {(reasons.length > 0 || canReveal) && (
+            <>
+              <header className="why__head">
+                <h3 className="why__title">Pourquoi ?</h3>
+                {!verdictHidden && (
+                  <Badge tone={VERDICT_TONE[v]} aria-label={`Verdict : ${VERDICT_FR[v]}`}>
+                    {VERDICT_FR[v]}
+                  </Badge>
+                )}
+              </header>
+              {reasons.length > 0 && list(reasons)}
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          <header className="why__head">
+            <h3 className="why__title">Pourquoi ?</h3>
+            {!verdictHidden && (
+              <Badge tone={VERDICT_TONE[v]} aria-label={`Verdict : ${VERDICT_FR[v]}`}>
+                {VERDICT_FR[v]}
+              </Badge>
             )}
-          </li>
-        ))}
-      </ol>
+          </header>
+          {list(items)}
+        </>
+      )}
+
+      {canReveal && (
+        <div className="why__reveal">
+          <Button variant="secondary" onClick={onRevealVerdict}>
+            Afficher mon verdict
+          </Button>
+          <span className="why__hint">Réfléchis d’abord : le verdict n’apparaît que si tu le demandes.</span>
+        </div>
+      )}
 
       <label className="why__toggle">
         <input type="checkbox" checked={showSources} onChange={(e) => onShowSources(e.target.checked)} />
